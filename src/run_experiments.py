@@ -186,11 +186,20 @@ def main() -> None:
                 f_log = open(log_path, "w", encoding="utf-8")
                 run_start = time.time()
                 try:
+                    # Restrict subprocess PyTorch threads to prevent CPU thrashing
+                    proc_env = os.environ.copy()
+                    proc_env["OMP_NUM_THREADS"] = "1"
+                    proc_env["MKL_NUM_THREADS"] = "1"
+                    proc_env["OPENBLAS_NUM_THREADS"] = "1"
+                    proc_env["VECLIB_MAXIMUM_THREADS"] = "1"
+                    proc_env["NUMEXPR_NUM_THREADS"] = "1"
+                    
                     proc = subprocess.Popen(
                         cmd,
                         stdout=f_log,
                         stderr=subprocess.STDOUT,
                         text=True,
+                        env=proc_env,
                     )
                     running.append((idx, label, proc, run_start, f_log))
                 except Exception as e:

@@ -47,6 +47,8 @@ def set_seeds(seed: int) -> None:
     # Deterministic CUDNN (may hurt perf but ensures reproducibility)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+    # Limit intra-op parallelism to 1 thread to prevent thread thrashing when running in parallel
+    torch.set_num_threads(1)
 
 
 def make_env(env_name: str, seed: int) -> gym.Env:
