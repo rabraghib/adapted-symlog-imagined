@@ -31,11 +31,11 @@ This project investigates whether applying **symlog-transformed losses** in an i
 
 We compare three experimental conditions:
 
-| Condition | Agent | World Model | Loss Type |
-|-----------|-------|-------------|-----------|
-| **A** — Model-Free AC | Baseline | ✗ | Standard MSE |
-| **B** — Imagination AC | Dyna-style | ✓ | Standard MSE |
-| **C** — Imagination AC + Symlog | Dyna-style | ✓ | **Symlog MSE** |
+| Condition                       | Agent      | World Model | Loss Type      |
+| ------------------------------- | ---------- | ----------- | -------------- |
+| **A** — Model-Free AC           | Baseline   | ✗           | Standard MSE   |
+| **B** — Imagination AC          | Dyna-style | ✓           | Standard MSE   |
+| **C** — Imagination AC + Symlog | Dyna-style | ✓           | **Symlog MSE** |
 
 ## Project Structure
 
@@ -99,9 +99,11 @@ python -m src.run_experiments [OPTIONS]
 Options:
   --experiment-dir DIR    Output directory (default: experiments)
   --dry-run               Preview commands without executing
+  --jobs, -j N            Number of parallel jobs to run (default: 1)
 ```
 
 Runs: 2 envs × 3 conditions × 5 seeds = **30 experiments**.
+Setting `--jobs 4` will run 4 experiments concurrently, significantly speeding up execution on multi-core GPU machines.
 
 ### `src.evaluate` — Aggregate results and generate plots
 
@@ -114,10 +116,14 @@ Options:
 
 Generates: learning curves, loss comparisons, world model error plots.
 
+## Cloud Execution (Lightning AI Studio)
+
+For running on the cloud (e.g. if local training is too slow), see the step-by-step **[Lightning AI Studio Guide](file:///d:/GitHub/Study/DRL-Project/docs/lightning_ai_setup.md)**.
+
 ## Hardware Requirements
 
-- **Minimum**: CPU with 8GB RAM (~5 hours for full suite)
-- **Recommended**: NVIDIA GPU with 4+ GB VRAM (~1-2 hours for full suite)
+- **Minimum**: CPU with 8GB RAM
+- **Recommended**: NVIDIA GPU with 4+ GB VRAM
 - **Tested on**: RTX 4050 Laptop (6GB VRAM), CUDA 13.2
 
 The code auto-detects CUDA and uses GPU if available (`device: "auto"` in Config).

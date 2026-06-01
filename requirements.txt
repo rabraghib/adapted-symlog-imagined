@@ -1,6 +1,6 @@
 # Core dependencies
 torch>=2.0
-gymnasium[classic_control]>=1.0
+gymnasium[classic_control,box2d]>=1.0
 numpy>=1.24
 matplotlib>=3.7
 

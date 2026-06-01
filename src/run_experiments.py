@@ -107,6 +107,13 @@ def main() -> None:
         default=False,
         help="Print commands without executing them.",
     )
+    parser.add_argument(
+        "--jobs",
+        "-j",
+        type=int,
+        default=1,
+        help="Number of parallel jobs to run. If 1, runs sequentially with live console output.",
+    )
     args = parser.parse_args()
 
     # Build the full list of experiments
@@ -119,35 +126,100 @@ def main() -> None:
     print(f"  Conditions   : {len(CONDITIONS)}")
     print(f"  Seeds        : {len(SEEDS)}")
     print(f"  Total runs   : {total}")
+    if not args.dry_run:
+        print(f"  Concurrency  : {args.jobs} job(s)")
     print("=" * 70 + "\n")
 
     failed: List[str] = []
     suite_start = time.time()
 
-    for idx, (env, condition, seed) in enumerate(experiments, 1):
-        label = f"{env} / {condition_label(condition)} / seed={seed}"
-        cmd = build_command(env, condition, seed, args.experiment_dir)
+    if args.jobs <= 1 or args.dry_run:
+        # Sequential execution
+        for idx, (env, condition, seed) in enumerate(experiments, 1):
+            label = f"{env} / {condition_label(condition)} / seed={seed}"
+            cmd = build_command(env, condition, seed, args.experiment_dir)
 
-        print(f"[{idx}/{total}] {label}")
-        if args.dry_run:
-            print(f"  CMD: {' '.join(cmd)}\n")
-            continue
+            print(f"[{idx}/{total}] {label}")
+            if args.dry_run:
+                print(f"  CMD: {' '.join(cmd)}\n")
+                continue
 
-        run_start = time.time()
-        try:
-            result = subprocess.run(
-                cmd,
-                check=True,
-                text=True,
-                capture_output=False,
-            )
-        except subprocess.CalledProcessError as exc:
-            print(f"  ✗ FAILED (exit code {exc.returncode})")
-            failed.append(label)
-            continue
+            run_start = time.time()
+            try:
+                subprocess.run(
+                    cmd,
+                    check=True,
+                    text=True,
+                    capture_output=False,
+                )
+            except subprocess.CalledProcessError as exc:
+                print(f"  [ERROR] FAILED (exit code {exc.returncode})")
+                failed.append(label)
+                continue
 
-        elapsed = time.time() - run_start
-        print(f"  ✓ Done in {elapsed:.1f}s\n")
+            elapsed = time.time() - run_start
+            print(f"  [OK] Done in {elapsed:.1f}s\n")
+    else:
+        # Parallel execution with output redirection to log files
+        import os
+        log_dir = os.path.join(args.experiment_dir, "logs")
+        os.makedirs(log_dir, exist_ok=True)
+
+        print(f"Running with {args.jobs} parallel workers. Outputs redirected to {log_dir}/\n")
+
+        pending = list(enumerate(experiments, 1))
+        running = []  # List of (idx, label, popen_obj, start_time, file_handle)
+        completed = 0
+
+        while pending or running:
+            # Start new processes up to the limit
+            while pending and len(running) < args.jobs:
+                idx, (env, condition, seed) = pending.pop(0)
+                label = f"{env} / {condition_label(condition)} / seed={seed}"
+                cmd = build_command(env, condition, seed, args.experiment_dir)
+
+                log_name = f"{env}_{condition_label(condition)}_seed{seed}.log".replace("+", "_")
+                log_path = os.path.join(log_dir, log_name)
+
+                print(f"[{idx}/{total}] STARTED: {label} (logging to {log_name})")
+
+                f_log = open(log_path, "w", encoding="utf-8")
+                run_start = time.time()
+                try:
+                    proc = subprocess.Popen(
+                        cmd,
+                        stdout=f_log,
+                        stderr=subprocess.STDOUT,
+                        text=True,
+                    )
+                    running.append((idx, label, proc, run_start, f_log))
+                except Exception as e:
+                    print(f"[{idx}/{total}] [ERROR] FAILED TO LAUNCH: {label} ({e})")
+                    failed.append(label)
+                    f_log.close()
+
+            # Check status of running processes
+            still_running = []
+            for item in running:
+                idx, label, proc, run_start, f_log = item
+                ret = proc.poll()
+                if ret is not None:
+                    # Process completed
+                    f_log.close()
+                    elapsed = time.time() - run_start
+                    completed += 1
+                    if ret == 0:
+                        print(f"[{idx}/{total}] [OK] SUCCESS: {label} in {elapsed:.1f}s")
+                    else:
+                        print(f"[{idx}/{total}] [ERROR] FAILED: {label} (exit code {ret})")
+                        failed.append(label)
+                else:
+                    still_running.append(item)
+            running = still_running
+
+            # Avoid busy-waiting loop
+            if pending or running:
+                time.sleep(0.5)
 
     # ------------------------------------------------------------------
     # Summary
@@ -157,11 +229,11 @@ def main() -> None:
     print("\n" + "=" * 70)
     print(f"  Suite completed in {suite_elapsed / 60:.1f} min")
     if failed:
-        print(f"  ✗ {len(failed)} run(s) failed:")
+        print(f"  [ERROR] {len(failed)} run(s) failed:")
         for f in failed:
             print(f"      - {f}")
     else:
-        print("  ✓ All runs succeeded!")
+        print("  [OK] All runs succeeded!")
     print("=" * 70 + "\n")
 
     if args.dry_run:
