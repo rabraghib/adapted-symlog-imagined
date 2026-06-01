@@ -135,8 +135,8 @@ Both use **Gymnasium** (successor to OpenAI Gym). Discrete action spaces for sim
 | Condition | World Model | Actor-Critic training | Loss type |
 |-----------|-------------|----------------------|-----------|
 | **A — Model-Free AC** | ✗ | On real transitions | Standard MSE |
-| **B — Imagination AC** | ✓ | On imagined rollouts | Standard MSE |
-| **C — Imagination AC + Symlog** | ✓ | On imagined rollouts | Symlog MSE |
+| **B — Imagination AC** | ✓ | Hybrid: real transitions + imagined rollouts (Dyna-style) | Standard MSE |
+| **C — Imagination AC + Symlog** | ✓ | Hybrid: real transitions + imagined rollouts (Dyna-style) | Symlog MSE |
 
 Each condition run with **5 random seeds** for statistical reliability.
 
@@ -176,7 +176,8 @@ DRL-Project/
 │   ├── architecture.md          #   Detailed architecture documentation
 │   ├── project_scope.md         #   ← This file
 │   ├── decisions.md             #   Technical decisions log (8 decisions)
-│   └── brainstorm.md            #   Original assignment notes
+│   ├── brainstorm.md            #   Original assignment notes
+│   └── results_analysis.md      #   Analysis of experiment graphs
 ├── report/                      # LaTeX report template
 ├── src/                         # Source code
 │   ├── config.py                #   Config dataclass (all hyperparameters)
@@ -199,7 +200,7 @@ DRL-Project/
 │       ├── logger.py            #     JSON metrics logging
 │       └── plotting.py          #     Matplotlib visualizations
 ├── experiments/                 # Generated: experiment results + plots
-├── requirements.txt
+├── requirements.txt             # Includes gymnasium[box2d] for LunarLander
 └── .venv/                       # Virtual environment
 ```
 

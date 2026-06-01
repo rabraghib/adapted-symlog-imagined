@@ -97,7 +97,9 @@ class ImaginationAC(BaseAgent):
         Returns:
             Scalar integer action.
         """
-        self.total_env_steps += 1
+        # Only count real environment steps, not evaluation steps
+        if not deterministic:
+            self.total_env_steps += 1
 
         # During warmup, use random actions for diverse exploration
         if self.total_env_steps <= self.config.warmup_steps and not deterministic:

@@ -22,10 +22,12 @@ and use a **Dyna-style hybrid** approach (train on both real and imagined data).
              │ (state, action, reward,     │ action
              │  next_state, done)          │
              ▼                             │
-┌────────────────────────┐                 │
-│     REPLAY BUFFER      │                 │
-│  (capacity: 100K)      │                 │
-└──────┬─────────────────┘                 │
+┌──────────────────────────────────┐       │
+│         REPLAY BUFFER            │       │
+│  (pre-allocated NumPy arrays,    │       │
+│   capacity: 100K, zero-copy      │       │
+│   torch.from_numpy() sampling)   │       │
+└──────┬───────────────────────────┘       │
        │ sample batches                    │
        ▼                                   │
 ┌────────────────────────┐                 │
@@ -186,6 +188,8 @@ All hyperparameters are defined in `src/config.py` as a `Config` dataclass:
 | `warmup_steps` | 1,000 | Steps before imagination begins |
 | `world_model_train_steps` | 2 | WM gradient steps per train call |
 | `imagination_train_ratio` | 10 | Imagination update every N steps |
+| `num_imagine_batches` | 8 | Number of batches for imagination rollouts. **Defined in `config.py` but currently unused** — the agent uses `batch_size` directly for the number of start states. |
+| `world_model_train_freq` | 1 | Train the world model every N environment steps. **Defined in `config.py` but currently unused** — the agent trains the world model on every step. |
 | `grad_clip_norm` | 1.0 | Maximum gradient norm |
 | `eval_freq` | 1,000 | Evaluate every N steps |
 | `eval_episodes` | 10 | Episodes per evaluation |
@@ -227,6 +231,41 @@ experiments/
     ├── LunarLander-v3_learning_curves.png
     └── ...
 ```
+
+---
+
+## Performance Optimizations for Parallel Execution
+
+When running the full experiment grid with `--jobs N`, several optimizations
+prevent CPU thread thrashing and improve throughput:
+
+### Thread pinning
+
+- **`torch.set_num_threads(1)`** is called at process startup in each spawned
+  subprocess. This prevents PyTorch's internal thread pool from competing with
+  other parallel workers.
+- The following environment variables are set to `"1"` in every spawned
+  subprocess to constrain underlying BLAS / math libraries to a single thread:
+  - `OMP_NUM_THREADS`
+  - `MKL_NUM_THREADS`
+  - `OPENBLAS_NUM_THREADS`
+  - `VECLIB_MAXIMUM_THREADS`
+  - `NUMEXPR_NUM_THREADS`
+
+### Vectorized replay buffer
+
+The replay buffer (`src/utils/replay_buffer.py`) uses **pre-allocated contiguous
+NumPy arrays** instead of a Python `deque`. Key properties:
+
+- Memory is allocated once via `np.zeros()` at first insertion (lazy
+  initialization based on observed `state_dim`).
+- Sampling uses `np.random.randint()` for vectorized index generation — no
+  Python-level loops or list comprehensions.
+- Tensors are created with `torch.from_numpy()` for zero-copy sharing between
+  NumPy and PyTorch (data is not duplicated in memory).
+
+These optimizations ensure that parallel runs with `--jobs N` scale efficiently
+without per-process CPU over-subscription.
 
 ---
 

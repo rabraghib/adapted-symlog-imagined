@@ -9,9 +9,9 @@
 # 1. Create virtual environment (already done if .venv exists)
 python -m venv .venv
 
-# 2. Install dependencies with CUDA support (RTX 4050)
-.venv\Scripts\pip install torch --index-url https://download.pytorch.org/whl/cu124
-.venv\Scripts\pip install gymnasium[classic_control] numpy matplotlib
+# 2. Install dependencies with CUDA support
+.venv\Scripts\pip install torch --index-url https://download.pytorch.org/whl/cu126
+.venv\Scripts\pip install -r requirements.txt
 
 # 3. Run a single training experiment
 .venv\Scripts\python -m src.train --agent imagination --env CartPole-v1 --use-symlog --seed 0
@@ -46,6 +46,7 @@ DRL-Project/
 │   ├── architecture.md          # Detailed architecture documentation
 │   ├── project_scope.md         # Full project scope and plan
 │   ├── decisions.md             # Technical decisions log
+│   ├── results_analysis.md      #   Analysis of experiment graphs
 │   └── brainstorm.md            # Original assignment notes
 ├── report/                      # LaTeX report template
 ├── src/                         # Source code
@@ -116,14 +117,25 @@ Options:
 
 Generates: learning curves, loss comparisons, world model error plots.
 
-## Cloud Execution (Lightning AI Studio)
-
-For running on the cloud (e.g. if local training is too slow), see the step-by-step **[Lightning AI Studio Guide](file:///d:/GitHub/Study/DRL-Project/docs/lightning_ai_setup.md)**.
-
 ## Hardware Requirements
 
 - **Minimum**: CPU with 8GB RAM
 - **Recommended**: NVIDIA GPU with 4+ GB VRAM
-- **Tested on**: RTX 4050 Laptop (6GB VRAM), CUDA 13.2
 
 The code auto-detects CUDA and uses GPU if available (`device: "auto"` in Config).
+
+---
+
+## Benchmarks & Computational Cost
+
+The full experiment suite consists of 30 runs (2 environments × 3 conditions × 5 seeds):
+
+- **CartPole-v1**: 100,000 steps per run.
+- **LunarLander-v3**: 300,000 steps per run.
+
+When executed in parallel using `--jobs 30` on a 32-vCPU cloud instance, the entire suite completes successfully in **100.2 minutes (approx. 1h 40m)**.
+
+Key scaling optimizations implemented:
+
+1. **Thread pinning & limiting**: Constrained each PyTorch process to a single thread (`torch.set_num_threads(1)` and thread-limiting environment variables like `OMP_NUM_THREADS=1`) to prevent CPU thread thrashing.
+2. **Vectorized Replay Buffer**: Upgraded the experience replay buffer to use pre-allocated contiguous NumPy arrays, speeding up memory accesses and zero-copy transition sampling.

@@ -75,3 +75,13 @@ Track all design decisions here with rationale, so they're easy to reference in 
   prediction errors grow exponentially with horizon length. Shorter horizons
   keep imagined trajectories closer to reality.
 - **Date**: 2026-06-01
+
+## Decision 9: Subprocess-level parallel execution with thread limiting
+- **Decision**: Limit PyTorch and BLAS/LAPACK threads to 1 per subprocess when running parallel experiments
+- **Rationale**: Spawning 30 parallel subprocesses where each attempts to use all available CPU cores causes massive CPU thread thrashing (over-subscription), dropping performance (FPS down to ~1). Constraining each subprocess to a single thread (`torch.set_num_threads(1)` and thread-limiting environment variables like `OMP_NUM_THREADS=1`) allows clean core scaling, reducing total runtime for the 30-experiment suite to just ~100 minutes on a 32-core machine.
+- **Date**: 2026-06-01
+
+## Decision 10: Pre-allocated NumPy array Replay Buffer (Vectorized Buffer)
+- **Decision**: Replace Python `deque` of tuples with a pre-allocated contiguous NumPy array-backed replay buffer
+- **Rationale**: Python `deque` of tuples is slow for sampling large batch sizes due to list copying and Python object allocations. Pre-allocating contiguous NumPy arrays once at start allows vectorized indexing with `np.random.randint()` and zero-copy tensor sharing via `torch.from_numpy()`. This significantly reduces training overhead, which is critical when multiple runs execute concurrently and compete for memory bandwidth.
+- **Date**: 2026-06-01

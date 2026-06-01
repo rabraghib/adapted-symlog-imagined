@@ -272,9 +272,18 @@ def main() -> None:
                 "returns_mean": agg["returns_mean"],
                 "returns_std": agg["returns_std"],
             }
-            # Attach loss curves if available
-            for loss_key in ["critic_loss", "actor_loss"]:
+            # Attach loss curves if available.
+            # ModelFreeAC emits "critic_loss" / "actor_loss".
+            # ImaginationAC emits "real_critic_loss" / "real_actor_loss"
+            # (and optionally "imag_critic_loss" / "imag_actor_loss").
+            # We try both key variants and store as the canonical name.
+            for loss_key, alt_key in [
+                ("critic_loss", "real_critic_loss"),
+                ("actor_loss", "real_actor_loss"),
+            ]:
                 loss_agg = aggregate_loss_curves(runs, loss_key)
+                if loss_agg is None:
+                    loss_agg = aggregate_loss_curves(runs, alt_key)
                 if loss_agg is not None:
                     cond_data[loss_key] = loss_agg["values"]
                     cond_data[f"{loss_key}_steps"] = loss_agg["steps"]
