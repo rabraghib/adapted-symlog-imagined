@@ -1,0 +1,8 @@
+# Core dependencies
+torch>=2.0
+gymnasium[classic_control]>=1.0
+numpy>=1.24
+matplotlib>=3.7
+
+# NOTE: For GPU support (NVIDIA), install torch with CUDA:
+#   pip install torch --extra-index-url https://download.pytorch.org/whl/cu126
