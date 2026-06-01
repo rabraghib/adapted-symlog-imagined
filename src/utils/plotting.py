@@ -99,7 +99,7 @@ def plot_loss_comparison(
 
     for idx, (name, data) in enumerate(results.items()):
         color = _PALETTE[idx % len(_PALETTE)]
-        steps = np.asarray(data["steps"])
+        steps = np.asarray(data.get("critic_loss_steps", data["steps"]))
         loss = np.asarray(data["critic_loss"])
         ax.plot(steps, loss, label=name, color=color, linewidth=2)
 
@@ -131,7 +131,7 @@ def plot_world_model_error(
     ax = axes[0]
     for idx, (name, data) in enumerate(results.items()):
         color = _PALETTE[idx % len(_PALETTE)]
-        steps = np.asarray(data["steps"])
+        steps = np.asarray(data.get("dynamics_loss_steps", data["steps"]))
         loss = np.asarray(data["dynamics_loss"])
         ax.plot(steps, loss, label=name, color=color, linewidth=2)
     ax.set_xlabel("Environment Steps", fontsize=13)
@@ -144,7 +144,7 @@ def plot_world_model_error(
     ax = axes[1]
     for idx, (name, data) in enumerate(results.items()):
         color = _PALETTE[idx % len(_PALETTE)]
-        steps = np.asarray(data["steps"])
+        steps = np.asarray(data.get("reward_loss_steps", data["steps"]))
         loss = np.asarray(data["reward_loss"])
         ax.plot(steps, loss, label=name, color=color, linewidth=2)
     ax.set_xlabel("Environment Steps", fontsize=13)

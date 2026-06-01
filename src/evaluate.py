@@ -277,12 +277,14 @@ def main() -> None:
                 loss_agg = aggregate_loss_curves(runs, loss_key)
                 if loss_agg is not None:
                     cond_data[loss_key] = loss_agg["values"]
+                    cond_data[f"{loss_key}_steps"] = loss_agg["steps"]
 
             # World model losses
             for wm_key in ["dynamics_loss", "reward_loss"]:
                 wm_agg = aggregate_loss_curves(runs, wm_key)
                 if wm_agg is not None:
                     cond_data[wm_key] = wm_agg["values"]
+                    cond_data[f"{wm_key}_steps"] = wm_agg["steps"]
 
             env_conditions[env_name][cond] = cond_data
 
