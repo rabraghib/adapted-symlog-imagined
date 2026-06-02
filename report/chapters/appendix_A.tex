@@ -1,7 +1,104 @@
-\chapter{An Appendix Chapter (Optional)}
+\chapter{Hyperparameter Configuration}
 \label{appn:A}
-% Optional chapter
-Some lengthy tables, codes, raw data, length proofs, etc. which are \textbf{very important but not essential part} of the project report goes into an Appendix. An appendix is something a reader would consult if he/she needs extra information and a more comprehensive understating of the report. Also, note that you should use one appendix for one idea.
 
-An appendix is optional. If you feel you do not need to include an appendix in your report, avoid including it. Sometime including irrelevant and unnecessary materials in the Appendices may unreasonably increase the total number of pages in your report and distract the reader.
+This appendix provides a comprehensive reference of all hyperparameters used throughout the experiments presented in this report. Unless otherwise stated, all configurations were held constant across the three experimental conditions (model-free, imagination, and imagination with symlog) to ensure a fair comparison.
 
+\section{Agent and Training Hyperparameters}
+
+\Cref{tab:hyperparams_complete} lists every hyperparameter governing the agent architecture, optimisation procedure, and training loop.
+
+\begin{table}[htbp]
+\centering
+\caption{Complete hyperparameter configuration used across all experiments.}
+\label{tab:hyperparams_complete}
+\begin{tabular}{@{}llp{6.2cm}@{}}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} & \textbf{Description} \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Optimisation}} \\
+\addlinespace[2pt]
+Learning rate           & $3 \times 10^{-4}$ & Adam optimiser, shared by all networks \\
+Gradient clip norm      & 1.0                & Maximum gradient norm for clipping \\
+Batch size              & 64                 & Mini-batch size sampled from replay buffer \\
+\addlinespace[4pt]
+\multicolumn{3}{@{}l}{\textit{Reinforcement Learning}} \\
+\addlinespace[2pt]
+Discount factor ($\gamma$) & 0.99           & Temporal discount applied to future rewards \\
+Entropy coefficient     & 0.01               & Actor entropy bonus coefficient \\
+\addlinespace[4pt]
+\multicolumn{3}{@{}l}{\textit{Replay Buffer}} \\
+\addlinespace[2pt]
+Buffer size             & 100{,}000          & Maximum replay buffer capacity \\
+\addlinespace[4pt]
+\multicolumn{3}{@{}l}{\textit{Network Architecture}} \\
+\addlinespace[2pt]
+Hidden dimensions       & (256, 256)         & MLP hidden layer sizes (two layers) \\
+\addlinespace[4pt]
+\multicolumn{3}{@{}l}{\textit{World Model \& Imagination}} \\
+\addlinespace[2pt]
+Imagination horizon     & 5                  & Number of steps to imagine forward \\
+Warmup steps            & 1{,}000            & Random action steps before imagination begins \\
+WM train steps          & 2                  & World model gradient steps per training call \\
+Imagination train ratio & 10                 & Imagination update performed every $N$ steps \\
+\addlinespace[4pt]
+\multicolumn{3}{@{}l}{\textit{Evaluation}} \\
+\addlinespace[2pt]
+Evaluation frequency    & 1{,}000            & Evaluate every $N$ environment steps \\
+Evaluation episodes     & 10                 & Number of episodes per evaluation \\
+\addlinespace[4pt]
+\multicolumn{3}{@{}l}{\textit{System}} \\
+\addlinespace[2pt]
+Device                  & auto               & CUDA if available, otherwise CPU \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Per-Environment Step Budgets}
+
+Each environment was allocated a fixed total interaction budget, chosen to provide sufficient training time for convergence while remaining computationally tractable. \Cref{tab:step_budgets} summarises the step budgets used.
+
+\begin{table}[htbp]
+\centering
+\caption{Total environment interaction steps allocated per environment.}
+\label{tab:step_budgets}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Environment} & \textbf{Total Steps} \\
+\midrule
+CartPole-v1    & 100{,}000 \\
+LunarLander-v3 & 300{,}000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The step budget for \texttt{LunarLander-v3} is three times that of \texttt{CartPole-v1}, reflecting its higher-dimensional observation and action spaces and consequently slower convergence characteristics.
+
+\section{Symlog Transform Implementation}
+
+The symlog and symexp functions, adapted from \cite{hafner2023dreamerv3}, provide a bijective pair of transformations that compress the scale of target values while preserving their sign. \Cref{lst:symlog} presents the PyTorch implementations used in this project.
+
+\begin{lstlisting}[
+    language=Python,
+    caption={Implementation of the symlog and symexp transforms and the associated loss function.},
+    label={lst:symlog},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\bfseries,
+    commentstyle=\itshape,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true
+]
+def symlog(x):
+    return torch.sign(x) * torch.log1p(torch.abs(x))
+
+def symexp(x):
+    return torch.sign(x) * (
+        torch.exp(torch.clamp(torch.abs(x), max=20.0)) - 1
+    )
+
+def symlog_mse_loss(predictions, targets):
+    return F.mse_loss(predictions, symlog(targets))
+\end{lstlisting}
+
+The \texttt{symlog} function compresses large magnitudes via $\operatorname{sign}(x) \cdot \ln(1 + |x|)$, ensuring that the world model's reward and value predictions operate on a numerically stable scale. The inverse \texttt{symexp} function recovers the original scale, with an internal clamp at $|x| \leq 20$ to prevent numerical overflow during exponentiation. The composite loss function \texttt{symlog\_mse\_loss} applies the symlog transform to the regression targets before computing the mean squared error, as described in \Cref{ch:method}.

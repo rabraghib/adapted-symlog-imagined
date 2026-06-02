@@ -4,6 +4,7 @@
 %%----------------------------------------------------------------------------------
 \documentclass[a4paper,11pt,oneside]{book} 
 \usepackage{CS_report} % DO NOT REMOVE THIS LINE. 
+\usepackage{float}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -19,50 +20,26 @@
     \begin{titlepage}      
         \begin{center}
             \includegraphics[width=5cm]{figures/logo.png}\\[0.5cm]
-            {\LARGE University of Xproce\\[0.5cm]
-            Department of Computer Science}\\[2cm]
-			%{\color{blue} \rule{\textwidth}{1pt}}
-			
-			% -------------------------------
-			% You need to edit some details here
-			% -------------------------------  
+            {\LARGE ENSAM Casablanca\\[0.5cm]
+            Artificial Intelligence \& Computer Science (IAGI)}\\[2cm]
+
             \linespread{1.2}\huge {
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                %TODO: 1 TITLE of Your PROJECT 
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                % change the following line                
-                Computer Science Report Template and Report Writing Guide
-            
+                Stabilising Imagination-Based Deep Reinforcement Learning via Symlog Loss Transformations
             }
             \linespread{1}~\\[2cm]
-			%{\color{blue} \rule{\textwidth}{1pt}}
             {\Large 
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                %TODO: 2 YOUR NAME
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%             
-                % change the following line
-                FirstName(s) LastName
-                % change end             
+                Rabyâ RAGHIB \& Hiba HANI
             }\\[1cm] 
             
 
             {\large 
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                %TODO: 3 YOUR NAME Supervisor's name(s)
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%             
-                % change the following line                
-                \emph{Supervisor:} Supervisor's Name}\\[1cm] % if applicable
+                \emph{Supervisor:} Badr HIRCHOUA}\\[1cm]
             
-    		% PLEASE DO NOT CHANGE THIS TEXT %
-            \large A report submitted in partial fulfilment of the requirements of\\the Hassan II University\\
-            %%%
-            %TODO:  verify your degree name
-            Artificial Intelligence and Computer Science 
+            \large A report submitted in partial fulfilment of the requirements of\\ENSAM Casablanca\\
+            Artificial Intelligence and Computer Science (IAGI)
             \\[0.3cm] 
             \vfill
-            
-            
-            \today % Please update this date you can use \date{April 2020} for fixed date
+            \today
         \end{center}
     \end{titlepage}
     
@@ -73,34 +50,18 @@
     \newpage
     \thispagestyle{empty}
     \chapter*{\Large Declaration}
-    % PLEASE CHANGE THIS TEXT EXCEPT YOUR NAME%
-    % -------------------------------
-    %TODO: PLEASE ONLY UPDATE HERE -- PLEASE WRITE YOUR NAME %    
-    % ------------------------------- 
-    I,
-    %%%%%%%%%%%%%%%%%%%%%%%
-     Firstname(s) Lastname, % Madatory part  TODO
-    %%%%%%%%%%%%%%%%%%%%%%%
-    of the Department of Computer Science, University of Reading, confirm that this is my own work and figures, tables, equations, code snippets, artworks, and illustrations in this report are original and have not been taken from any other person's work, except where the works of others have been explicitly acknowledged, quoted, and referenced. I understand that if failing to do so will be considered a case of plagiarism. Plagiarism is a form of academic misconduct and will be penalised accordingly. \\
-    
-    %% Please delete as appropriate. 
-    \noindent
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-    %TODO 1 Consent for example copy -  we will use 
-    I give consent to a copy of my report being shared with future students as an exemplar. \\
+    We,
+     Rabyâ RAGHIB and Hiba HANI,
+    of the Department of Computer Science, Artificial Intelligence \& Computer Science (IAGI) branch, ENSAM Casablanca, confirm that this is our own work and figures, tables, equations, code snippets, artworks, and illustrations in this report are original and have not been taken from any other person's work, except where the works of others have been explicitly acknowledged, quoted, and referenced. We understand that if failing to do so will be considered a case of plagiarism. Plagiarism is a form of academic misconduct and will be penalised accordingly. \\
     
     \noindent
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-    %TODO 2 Consent to let the report to use use by library for public use
-    I give consent for my work to be made available more widely to members of UoR and public with interest in teaching, learning and research. 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    We give consent to a copy of our report being shared with future students as an exemplar. \\
+    
+    \noindent
+    We give consent for our work to be made available more widely to members of ENSAM Casablanca and the public with interest in teaching, learning and research.
     ~\\[1cm]
     \begin{flushright}
-	%------------------------------ 
-	% change the following line
-    %TODO: PLEASE UPDATE  Your Name  -------------------------------%
-	Firstname(s) Lastname % Please change it to your name
-    
+    Rabyâ RAGHIB \& Hiba HANI\\
     \today
     \end{flushright}
 
@@ -136,12 +97,10 @@
     %%                                                                    %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     \mainmatter
-    % Read for preparation of document in LaTex 
-    % Lamport, L. (1986), LATEX: A Document Preparation System, Addison-Wesley.
     
     \input{chapters/00_iii_GeneralIntroduction}
     \input{chapters/01_introduction}
-    \input{chapters/02_literature} % https://guides.library.bloomu.edu/litreview
+    \input{chapters/02_literature}
     \input{chapters/03_methodology}
     \input{chapters/04_results}
     \input{chapters/05_discussion}
@@ -154,7 +113,7 @@
     % -------------------------------------------------------------------
     % Bibliography/References  -  Harvard Style was used in this report
     % -------------------------------------------------------------------
-    \bibliography{references}  %  Patashnik, O. (1988), BibTEXing. Documentation for general BibTEX users.
+    \bibliography{references}
     
     % -------------------------------------------------------------------
     % Appendices
@@ -162,7 +121,6 @@
     
     \begin{appendices}
         \input{chapters/appendix_A.tex}
-        \input{chapters/appendix_B.tex}
     \end{appendices}
     
 \end{document}

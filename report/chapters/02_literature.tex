@@ -1,208 +1,81 @@
-% ================================================================
-% CHANGES MADE TO THIS FILE:
-% [FIX 1] Added a proper introductory paragraph at the top of the chapter.
-%         Previously the chapter jumped straight into a list with no opening 
-%         context — every chapter should open with a short paragraph explaining 
-%         what the chapter covers before diving into sections.
-% [FIX 2] Added \section{Organising Your Literature Review} — the most 
-%         important section was completely missing. The old template only 
-%         explained citation syntax but gave no guidance on HOW to actually 
-%         structure and write a literature review (thematic vs chronological, 
-%         synthesis vs summary). This is the weakest chapter in the original 
-%         template and this section addresses that gap.
-% [FIX 3] Added \section{Synthesis and Critical Analysis} — students need 
-%         explicit guidance on the difference between summarising a paper 
-%         and critically synthesising multiple sources.
-% [FIX 4] The citation examples section title was "Example of in-text citation 
-%         of references in LaTeX" — this is a technical/LaTeX guidance section, 
-%         not literature review content. It has been renamed and repositioned 
-%         as a clearly labelled technical reference section so students 
-%         understand it is a writing tool, not a content section.
-% [FIX 5] Improved the Summary section — it was a one-line placeholder.
-%         Replaced with a structured closing paragraph.
-% ================================================================
-
 \chapter{Literature Review}
 \label{ch:lit_rev}
 
-% [FIX 1] Added introductory paragraph — was completely missing in original.
-This chapter reviews the existing literature relevant to the investigated problem. 
-It situates the project within the current state of the art, identifies gaps in 
-existing knowledge, and demonstrates the significance and motivation of this work. 
-The review is organised as follows: Section~\ref{sec:lit_organisation} provides 
-guidance on structuring a literature review; Section~\ref{sec:lit_synthesis} 
-discusses critical analysis and synthesis; Section~\ref{sec:lit_citation} covers 
-referencing and citation conventions; and Section~\ref{sec:lit_plagiarism} 
-addresses plagiarism avoidance.
-
-\noindent A literature review chapter might contain the following:
-\begin{enumerate}
-    \item A review of the state-of-the-art (include theories and solutions) of 
-    the field of research.
-    \item A description of the project in the context of existing literature 
-    and products/systems.
-    \item An analysis of how the review is relevant to the intended 
-    application/system/problem.
-    \item A critique of existing work compared with the intended work.
-\end{enumerate}
-Note that your literature review should demonstrate the significance of the project.
+This chapter reviews the literature relevant to the design and motivation of this project. It establishes the foundations of reinforcement learning, discusses model-based approaches, and traces the development of world models leading to DreamerV3~\citep{hafner2023dreamerv3}. It also details the symlog transformation and the specific motivation for this work.
 
 % ================================================================
-% [FIX 2] NEW SECTION — was completely absent from the original template.
-\section{Organising Your Literature Review}
-\label{sec:lit_organisation}
+\section{Reinforcement Learning Foundations}
+\label{sec:lit_rl_foundations}
 % ================================================================
 
-A literature review is not a list of paper summaries. It must be organised 
-around ideas, themes, or arguments — not around individual papers. There are 
-two main organisational strategies:
+Reinforcement learning (RL) is a computational framework in which an agent learns to make sequential decisions by interacting with an environment to maximize a cumulative reward signal. The interaction is formalised as a Markov Decision Process (MDP), defined by the tuple $(\mathcal{S}, \mathcal{A}, P, R, \gamma)$, where $\mathcal{S}$ is the state space, $\mathcal{A}$ is the action space, $P(s' \mid s, a)$ is the transition function, $R(s, a)$ is the reward function, and $\gamma \in [0, 1)$ is the discount factor. At each time step $t$, the agent observes a state $s_t \in \mathcal{S}$, selects an action $a_t \in \mathcal{A}$ according to its policy $\pi(a \mid s)$, receives a scalar reward $r_t = R(s_t, a_t)$, and transitions to a successor state $s_{t+1} \sim P(\cdot \mid s_t, a_t)$. The agent's objective is to find a policy $\pi^*$ that maximises the expected discounted return:
+\begin{equation}
+    G_t = \sum_{k=0}^{\infty} \gamma^k \, r_{t+k}.
+    \label{eq:return}
+\end{equation}
 
-\begin{itemize}
-    \item \textbf{Thematic organisation (recommended):} Group sources by topic, 
-    concept, or research theme. For example, one section may review methods for 
-    feature extraction, another for classification, and another for evaluation 
-    benchmarks. This approach shows the reader the landscape of ideas and how 
-    they relate to each other.
+Central to RL algorithms are value functions. The state-value function $V^\pi(s) = \mathbb{E}_\pi [G_t \mid s_t = s]$ measures the expected return from state $s$ under policy $\pi$. Temporal-difference (TD) learning updates value estimates at each step using the observed reward and the estimated value of the successor state. The standard TD(0) update rule is:
+\begin{equation}
+    V(s_t) \leftarrow V(s_t) + \alpha \bigl[ r_t + \gamma V(s_{t+1}) - V(s_t) \bigr],
+    \label{eq:td_update}
+\end{equation}
+where $\alpha$ is the learning rate and the quantity in brackets is the TD error $\delta_t$.
 
-    \item \textbf{Chronological organisation:} Arrange sources from earliest to 
-    most recent to show how the field has evolved over time. This is useful when 
-    the development of a concept over time is central to your argument.
-\end{itemize}
-
-\noindent Regardless of the structure chosen, each section of your literature 
-review should:
-\begin{itemize}
-    \item Open with a sentence that states what the section is about.
-    \item Discuss multiple sources together and compare them, rather than 
-    describing each paper in isolation.
-    \item End with a sentence that connects the reviewed material to your 
-    own project.
-\end{itemize}
+In actor-critic architectures, the agent maintains a parameterized policy $\pi_\theta$ (the actor) and a learned value function $V_\phi(s)$ (the critic) that serves as a baseline to reduce gradient variance. The actor parameters are updated using policy gradients:
+\begin{equation}
+    \nabla_\theta J(\theta) = \mathbb{E}_{\pi_\theta} \Bigl[
+        \nabla_\theta \log \pi_\theta(a_t \mid s_t) \, \hat{A}_t
+    \Bigr],
+    \label{eq:policy_gradient}
+\end{equation}
+where $\hat{A}_t$ is an estimator of the advantage function $A^\pi(s,a) = Q^\pi(s,a) - V^\pi(s)$.
 
 % ================================================================
-% [FIX 3] NEW SECTION — was completely absent from the original template.
-\section{Synthesis and Critical Analysis}
-\label{sec:lit_synthesis}
+\section{Model-Based Reinforcement Learning and World Models}
+\label{sec:lit_model_based}
 % ================================================================
 
-The most important skill in a literature review is synthesis: combining 
-information from multiple sources to build a coherent argument, rather than 
-simply summarising each paper in turn. 
+Model-free RL methods learn policies or value functions directly from observed transitions. Although successful, they typically require large numbers of environment interactions, making them sample-inefficient. Model-based RL addresses this by learning a predictive model of the environment (approximating the transition function $P(s' \mid s, a)$ and the reward function $R(s, a)$) and using it to generate simulated experience.
 
-\begin{itemize}
-    \item \textbf{Summarising} (avoid as a primary mode): ``Smith (2020) proposed 
-    method X. Jones (2021) proposed method Y. Lee (2022) proposed method Z.''
+The Dyna architecture combines real-world acting, model learning, and planning. In Dyna, the learned world model generates simulated transitions that are used to update the policy or value function in the same manner as real experience. By interleaving planning steps with real interactions, the agent improves sample efficiency.
 
-    \item \textbf{Synthesising} (aim for this): ``Several methods have been 
-    proposed for X, including approach A \citep{lamport1994latex}, approach B 
-    \citep{kottwitzlatex2021}, and approach C. While A and B share the assumption 
-    that..., C differs by... However, none of these approaches address the problem 
-    of..., which is the gap this project targets.''
-\end{itemize}
+However, model-based planning introduces the challenge of compounding model error. When the learned model is imperfect, errors in predicted transitions accumulate over multi-step rollouts, causing simulated trajectories to diverge from reality. Polices optimized on these inaccurate simulations can perform poorly in the real environment.
 
-\noindent Critical analysis means evaluating the strengths and weaknesses of 
-existing work — not just reporting what was done. For each group of sources, ask:
-\begin{itemize}
-    \item What are the key assumptions made, and are they justified?
-    \item What are the limitations of the proposed methods?
-    \item How do the results compare across different studies?
-    \item What remains unresolved or contested in the literature?
-\end{itemize}
+To address compounding errors, modern algorithms learn world models and perform planning or "imagination" within a learned state space. The Dreamer family of algorithms has developed this approach for general-purpose applications. The third iteration of this family, DreamerV3~\citep{hafner2023dreamerv3}, introduces scale-invariant learning techniques that enable a single set of hyperparameters to solve diverse environments.
 
 % ================================================================
-% [FIX 4] Renamed section from "Example of in-text citation of references 
-%         in LaTeX" to a clearer title that signals it is a technical guide.
-\section{Citation and Referencing Guide}
-\label{sec:lit_citation}
+\section{The Symlog Transformation}
+\label{sec:lit_symlog}
 % ================================================================
 
-The references in a report relate your content with the relevant sources, papers, 
-and the works of others. To include references in a report, we \textit{cite} them 
-in the text. In \LaTeX, the most convenient way is to use BibTeX, which takes 
-references in a particular format [see \texttt{references.bib} file of this 
-template] and formats them in the required style (APA, Harvard, IEEE, etc.) 
-with the help of appropriate packages.
+A major challenge in general-purpose RL is the wide variation in reward and value scales. Environments with large reward scales produce large value targets, which generate large gradients in the critic's loss function, destabilising training.
 
-Take note of the commands \textbackslash cite\{\} and \textbackslash citep\{\}. 
-The command \textbackslash cite\{\} produces ``Author et al. (2019)'' style for 
-Harvard/APA. The command \textbackslash citep\{\} produces ``(Author et al., 2019).'' 
-Depending on how you construct a sentence, use them appropriately. 
-This Department recommends the \textbf{Harvard style} of referencing.
+The symmetric logarithm (symlog) transformation, introduced in DreamerV3~\citep{hafner2023dreamerv3}, compresses both positive and negative values logarithmically while preserving the sign:
+\begin{equation}
+    \operatorname{symlog}(x) = \operatorname{sign}(x) \cdot \ln\bigl(|x| + 1\bigr).
+    \label{eq:symlog}
+\end{equation}
+Its inverse, the symexp function, recovers the original scale:
+\begin{equation}
+    \operatorname{symexp}(x) = \operatorname{sign}(x) \cdot \bigl(e^{|x|} - 1\bigr).
+    \label{eq:symexp}
+\end{equation}
+The symlog function is smooth, monotonic, and behaves approximately linearly near zero, transitioning to logarithmic compression for large magnitudes. This allows small rewards to retain resolution while large rewards are compressed, protecting gradient stability.
 
-\begin{itemize}
-    \item \cite{kottwitzlatex2021} has written a comprehensive guide on writing 
-    in \LaTeX~[Example of \textbackslash cite\{\}].
-    \item If \LaTeX~is used efficiently and effectively, it helps in writing a 
-    very high-quality project report~\citep{lamport1994latex}~[Example of 
-    \textbackslash citep\{\}].
-    \item A detailed APA, Harvard, and Chicago referencing style guide are 
-    available in~\citep{uor_refernce_style}.
-\end{itemize}
-
-\noindent This is an example of a numbered list with in-text citations:
-\begin{enumerate}
-    \item \cite{kottwitzlatex2021} has written a comprehensive guide on writing 
-    in \LaTeX.
-    \item If \LaTeX~is used efficiently and effectively, it helps in writing a 
-    very high-quality project report~\citep{lamport1994latex}.
-\end{enumerate}
-
-\subsection{Reference Resources}
-\label{subsec:reflinks}
-You can find additional referencing resources from the University Library:
-\begin{itemize}
-    \item \url{https://libguides.reading.ac.uk/computer-science}
-    \item \url{https://libguides.reading.ac.uk/citing-references/citationexamples}
-\end{itemize}
-
-\subsection{Changing Bibliography Styles}
-While this report uses name-and-date formatting in the Harvard style, you may 
-also wish to use a numbered style such as IEEE. To enable this, edit the 
-\path{CS_report.sty} file. Uncomment the 2 lines of Harvard settings under 
-\texttt{Bibliography/References settings}, and enable the IEEE style:
-
-\begin{verbatim}
-% IEEE, Numbered Style
-\usepackage[numbers]{natbib}
-\bibliographystyle{IEEEtran}
-\end{verbatim}
-
-Note that when making this change, you will need to modify the way in which 
-you refer to authors by name using \verb|\citeauthor{}|.
+In DreamerV3~\citep{hafner2023dreamerv3}, symlog is applied to the world model's reward predictor and to the critic's target return predictions. This keeps gradients stable across different reward scales.
 
 % ================================================================
-\section{Avoiding Unintentional Plagiarism}
-\label{sec:lit_plagiarism}
+\section{Identified Gap and Project Motivation}
+\label{sec:lit_gap}
 % ================================================================
 
-Using other sources, ideas, and material always carries a risk of unintentional 
-plagiarism.
+DreamerV3~\citep{hafner2023dreamerv3} integrates multiple components, including a recurrent state-space model (RSSM), discrete latent representations, KL balancing, unimix distributions, symlog predictions, two-hot encoding, and return normalization. Because these components are evaluated together in complex environments, the specific contribution of the symlog transformation remains entangled with other scaling and planning mechanisms.
 
-\noindent
-\textbf{\color{red}MUST}: Read the university guidelines on the definition of 
-plagiarism as well as the guidelines on how to avoid 
-it~\citep{uor_plagiarism}.
+This project isolates the effect of the symlog transformation in a simplified setting. By using a feedforward world model in the raw state space, we examine how symlog-transformed losses affect training stability and prevent value divergence across environments with contrasting reward scales.
 
 % ================================================================
-\section{Critique of the Review}
-\label{sec:lit_critique}
-% ================================================================
-
-Describe your main findings and evaluation of the literature. What are the key 
-gaps, contradictions, or open problems identified through your review? How does 
-this project address one or more of these gaps?
-
-% ================================================================
-% [FIX 5] Summary section was a one-line placeholder. 
-%         Replaced with a structured closing paragraph.
 \section{Summary}
 \label{sec:lit_summary}
 % ================================================================
 
-% [FIX 5] Original was just: "Write a summary of this chapter"
-% Replaced with a structured template that mirrors other chapters.
-This chapter reviewed the existing literature relevant to [state the topic of 
-your project]. The review identified that [summarise the key themes covered]. 
-It was found that [state the main gap or limitation in existing work] which 
-motivates the approach adopted in this project. The following chapter, 
-Chapter~\ref{ch:method}, describes the methodology used to address this gap.
+This chapter reviewed reinforcement learning, model-based planning, and the scale-invariance provided by the symlog transformation in DreamerV3~\citep{hafner2023dreamerv3}. We identified the need to isolate the effects of symlog in a simplified architecture. Chapter~\ref{ch:method} details the experimental design and methodology.

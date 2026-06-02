@@ -1,129 +1,53 @@
-% ================================================================
-% CHANGES MADE TO THIS FILE:
-% [FIX 1] Added a proper introductory paragraph at the top of the chapter.
-%         The original had no opening paragraph — it jumped directly into 
-%         the Conclusions section with no framing sentence.
-% [FIX 2] Added a structured skeleton to \section{Conclusions}. The original 
-%         only had prose guidance with no template for students to follow. 
-%         Added clearly marked [REPLACE THIS] paragraph blocks so students 
-%         know exactly what to write in each part.
-% [FIX 3] Fixed incorrect cross-reference in \section{Future Work}. 
-%         The original referenced Chapter~\ref{ch:results} but future work 
-%         should refer to the Limitations section in the Discussion chapter 
-%         (Chapter~\ref{ch:evaluation}), not the Results chapter.
-% [FIX 4] Added a structured skeleton to \section{Future Work} matching 
-%         the same treatment applied to Conclusions in [FIX 2].
-% [FIX 5] Added \section{Summary} which was completely absent. Every other 
-%         chapter ends with a Summary — this was the only chapter without one.
-% ================================================================
-
+% !TEX root = ../main.tex
 \chapter{Conclusions and Future Work}
 \label{ch:con}
 
-% [FIX 1] Added introductory paragraph — was completely missing in original.
-This chapter brings the report to a close. Section~\ref{sec:conclusions} 
-summarises the project's key contributions and findings in relation to the 
-stated aims and objectives. Section~\ref{sec:future_work} outlines directions 
-for future work that build on the results and limitations identified in 
-Chapter~\ref{ch:evaluation}.
-
-% ================================================================
-% [FIX 2] Added structured skeleton to Conclusions section.
+%--------------------------------------------------------------
 \section{Conclusions}
-\label{sec:conclusions}
-% ================================================================
+%--------------------------------------------------------------
 
-% Guidance: A conclusions chapter first summarises the investigated problem 
-% and its aims and objectives, then summarises the critical findings, and 
-% finally draws out the central contributions and achievements of the project.
-% Aim for approximately 300--500 words. This is one of the last things you 
-% write in your report (along with the Abstract).
+This project evaluated the effect of symlog-transformed losses on the stability and performance of imagination-based reinforcement learning agents. Inspired by DreamerV3~\citep{hafner2023dreamerv3}, we isolated and evaluated the contribution of symlog in a simplified setting.
 
-% --- Paragraph 1: Restate the problem and objectives ---
-% [FIX 2] New structured template below. Replace all [REPLACE THIS] blocks.
-This project investigated \textit{[REPLACE: state the problem that was 
-investigated]}. The main aim was to \textit{[REPLACE: restate the aim]}, 
-with the following objectives: \textit{[REPLACE: briefly list the objectives]}.
+We implemented a simplified Dreamer-like agent operating in raw state space without the RSSM, two-hot encoding, or KL balancing. We compared three configurations: model-free actor-critic (Condition~A), imagination-based actor-critic with standard MSE losses (Condition~B), and imagination-based actor-critic with symlog-transformed losses (Condition~C). These were evaluated on CartPole-v1 and LunarLander-v3.
 
-% --- Paragraph 2: Summary of methodology ---
-To achieve these objectives, \textit{[REPLACE: briefly describe the methods, 
-algorithms, or tools applied and the experimental setup used]}.
+The key findings are:
 
-% --- Paragraph 3: Summary of key findings ---
-The key findings of this project are as follows:
 \begin{itemize}
-    \item \textit{[REPLACE: State the finding related to Objective 1 and 
-    whether it was achieved.]}
-    \item \textit{[REPLACE: State the finding related to Objective 2 and 
-    whether it was achieved.]}
-    \item \textit{[REPLACE: State the finding related to Objective 3 and 
-    whether it was achieved.]}
+    \item \textbf{Imagination-based training improves sample efficiency in benign settings.} In CartPole-v1, Condition~B reached near-optimal performance in fewer steps than Condition~A, supporting the premise that learning from simulated experience can improve sample efficiency.
+
+    \item \textbf{Standard MSE losses can cause value function divergence in imagination-based agents.} In LunarLander-v3, where rewards span from $-100$ to $+100$, Condition~B failed to learn. The critic loss escalated to magnitudes exceeding $10^{15}$, leading to policy collapse with mean returns of approximately $-1000$.
+
+    \item \textbf{Symlog-transformed losses prevent value divergence and reward prediction instability.} Condition~C maintained stable critic losses in both environments. The logarithmic compression of the symlog function bounds gradient magnitudes, preventing the feedback loop between prediction errors and large parameter updates.
+
+    \item \textbf{Symlog provides stability independent of other architectural components.} The stabilizing effect of symlog was observed without other DreamerV3 components, indicating that symlog directly addresses value divergence in imagination-based learning.
 \end{itemize}
 
-% --- Paragraph 4: Central contribution ---
-Overall, the central contribution of this project is \textit{[REPLACE: state 
-the most significant achievement or contribution of the work]}. The results 
-demonstrate that \textit{[REPLACE: summarise the most important result and 
-its implication]}.
+This study provides an evaluation of the symlog transformation in isolation. By controlling for other components of DreamerV3, we show that symlog alone is sufficient to prevent value function divergence. This suggests that symlog-transformed losses are a useful design choice for agents training on simulated trajectories.
 
-\noindent\textit{A good conclusions summary is approximately 300--500 words. 
-Remove this note before submitting.}
-
-% ================================================================
+%--------------------------------------------------------------
 \section{Future Work}
-\label{sec:future_work}
-% ================================================================
+%--------------------------------------------------------------
 
-% [FIX 3] Fixed cross-reference: was \ref{ch:results}, now \ref{ch:evaluation}.
-%         Future work stems from limitations (Discussion ch.), not raw Results.
-% [FIX 4] Added structured skeleton matching the Conclusions section above.
+The limitations identified in Chapter~\ref{ch:evaluation} suggest several directions for future research.
 
-% Guidance: Discuss future work in technical terms based on what was not yet 
-% achieved, what you learned, and what could realistically be built on top 
-% of the completed work. Aim for approximately 300--500 words.
+\subsection{Short-Term Extensions}
 
-The limitations identified in Chapter~\ref{ch:evaluation} suggest several 
-directions for future investigation. The following areas represent the most 
-promising avenues for extending this work:
+\textbf{Continuous action spaces.} A direct extension is to test the configurations in continuous action spaces, such as MountainCarContinuous-v0 or HalfCheetah-v4. Continuous control tasks feature different reward distributions and require policy gradient methods that may interact differently with the symlog transformation.
 
-% --- Short-term future work ---
-\begin{itemize}
-    \item \textbf{[REPLACE: Short-term improvement 1]:} \textit{[REPLACE: 
-    Describe a concrete, achievable improvement that directly addresses a 
-    limitation identified in the Discussion chapter, e.g., increasing the 
-    dataset size, testing on additional benchmarks, tuning hyperparameters.]}
+\textbf{Two-hot encoding.} DreamerV3 combines symlog with two-hot categorical encoding for value and reward predictions~\citep{hafner2023dreamerv3}. Future work could introduce two-hot encoding as a separate experimental configuration to analyze the individual and combined effects of symlog and two-hot encoding.
 
-    \item \textbf{[REPLACE: Short-term improvement 2]:} \textit{[REPLACE: 
-    Describe a second near-term improvement or extension.]}
-\end{itemize}
+\textbf{Reward scaling experiments.} To characterize the sensitivity of imagination-based training to reward scale, experiments could vary reward scales by multiplicative factors (such as $100\times$ or $0.01\times$). This would show the thresholds at which value divergence occurs under standard MSE losses.
 
-% --- Longer-term future directions ---
-In the longer term, the following research directions could build on the 
-outcomes of this project:
-\begin{itemize}
-    \item \textbf{[REPLACE: Long-term direction 1]:} \textit{[REPLACE: 
-    Describe a broader research direction that this project opens up, 
-    e.g., applying the method to a different domain, integrating it into 
-    a larger system, or combining it with a complementary technique.]}
+\subsection{Long-Term Investigations}
 
-    \item \textbf{[REPLACE: Long-term direction 2]:} \textit{[REPLACE: 
-    Describe a second longer-term direction.]}
-\end{itemize}
+\textbf{Recurrent latent dynamics.} Replacing the MLP-based world model with a Recurrent State-Space Model (RSSM) would bring the architecture closer to DreamerV3. This would allow investigation of whether symlog remains necessary when using latent-space world models.
 
-\noindent\textit{A good future work summary is approximately 300--500 words. 
-Remove this note before submitting.}
+\textbf{Complex environments.} Evaluating the agents on pixel-based observations or tasks with longer time horizons, such as Atari games, would test the scalability of the approach.
 
-% ================================================================
-% [FIX 5] Added \section{Summary} — was completely absent from this chapter.
-%         Every other chapter ends with a Summary section.
+\textbf{Alternative normalization techniques.} Future work could compare symlog with other normalization methods, such as PopArt (adaptive normalization of targets) or running-mean normalization, to establish performance trade-offs.
+
+%--------------------------------------------------------------
 \section{Summary}
-\label{sec:con_summary}
-% ================================================================
+%--------------------------------------------------------------
 
-% [FIX 5] This section did not exist in the original file at all.
-This chapter concluded the project by summarising the key findings in relation 
-to the stated aims and objectives, and by identifying the main contributions 
-of this work. Directions for future research were also proposed, grounded in 
-the limitations discussed in Chapter~\ref{ch:evaluation}. 
-Chapter~\ref{ch:reflection} provides a personal reflection on the project 
-experience.
+This chapter summarized the findings, highlighting the role of symlog-transformed losses in preventing value divergence during imagination-based reinforcement learning. The results show that symlog is an effective stabilization mechanism in isolation. Future work includes evaluating continuous action spaces, alternative encoding methods, and more complex environments.

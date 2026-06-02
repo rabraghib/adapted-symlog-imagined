@@ -1,18 +1,11 @@
+\chapter*{\center \Large Abstract}
 
-\chapter*{\center \Large  Abstract}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Replace all text with your text
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Deep reinforcement learning agents that learn through imagined trajectories within a learned world model improve sample efficiency over purely model-free methods. However, these imagination-based approaches are sensitive to reward scale: when value predictions are trained with standard mean squared error losses, critic predictions can diverge when imagined returns span several orders of magnitude. This report investigates whether the symlog transformation, a symmetric logarithmic function recently introduced in DreamerV3, can stabilize this training.
 
+We implement a simplified Dreamer-like architecture with a learned transition model and an actor-critic policy trained on imagined rollouts. We compare three configurations: a model-free actor-critic baseline, an imagination-based actor-critic with standard MSE losses, and an imagination-based actor-critic with symlog-transformed losses. We evaluate these configurations on CartPole-v1 and LunarLander-v3 using five random seeds, yielding thirty training runs.
 
+Without the symlog transformation, imagination-based training suffers from critic loss divergence (reaching values near $10^{15}$ in LunarLander) and performance collapse. The symlog transformation prevents this divergence, maintaining stable critic losses and performance. All configurations converge on the simpler CartPole-v1 environment, which confirms that the instability depends on reward scale.
 
-%%%
-~\\[1cm]%REMOVE THIS
-\noindent\textbf{Guidance on abstract writing:} An abstract is a summary of a report in a single paragraph up to a maximum of 250 words. An abstract should be self-contained, and it should not refer to sections, figures, tables, equations, or references. An abstract typically consists of sentences describing the following four parts: (1) introduction (background and purpose of the project), (2) methods, (3) results and analysis, and (4) conclusions. The distribution of these four parts of the abstract should reflect the relative proportion of these parts in the report itself. An abstract starts with a few sentences describing the project's general field, comprehensive background and context, the main purpose of the project; and the problem statement. A few sentences describe the methods, experiments, and implementation of the project. A few sentences describe the main results achieved and their significance. The final part of the abstract describes the conclusions and the implications of the results to the relevant field.
+These findings indicate that symlog-transformed losses are important for stable imagination-based training, highlighting the role of loss design in reinforcement learning.
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%s
-~\\[1cm]
-\noindent % Provide your key words
-\textbf{Keywords:} A minimum/maximum of four to ten keywords/keyphrases, separated by commas.
-
+\paragraph{Keywords:} deep reinforcement learning, symlog, world model, imagination-based training, actor-critic, loss function adaptation

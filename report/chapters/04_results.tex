@@ -1,212 +1,219 @@
 % ================================================================
-% CHANGES MADE TO THIS FILE:
-% [FIX 1] Added a proper introductory paragraph at the top of the chapter.
-%         The original had no opening paragraph — it jumped straight into 
-%         bullet points with no context sentence for the chapter.
-% [FIX 2] Removed the inline note "What happened when you removed each 
-%         component." from the Ablation Study section. This was a loose 
-%         developer note left outside any comment block, which would appear 
-%         as visible body text in the compiled PDF.
-% [FIX 3] Merged \section{Summary of Results} (Section 4.5) and 
-%         \section{Summary} (Section 4.6) into a single \section{Summary}.
-%         The original file had both, which was redundant. The summary table 
-%         from 4.5 is retained inside the unified Summary section.
-% [FIX 4] Added a forward reference in the Summary to Chapter 5 using 
-%         \ref{ch:evaluation} for consistency with other chapters.
+% Results Chapter
+% Presents the experimental findings for both environments across
+% the three agent conditions. Content is objective and descriptive;
+% deeper interpretation is deferred to Chapter 5 (Discussion).
 % ================================================================
 
 \chapter{Results}
 \label{ch:results}
 
-% [FIX 1] Added introductory paragraph — was missing in the original.
-This chapter presents the results obtained by applying the methodology described 
-in Chapter~\ref{ch:method}. The findings are arranged in a logical sequence, 
-progressing from overall algorithm performance to data-driven findings, and 
-concluding with the ablation study. Each result is directly linked to a specific 
-objective or research question stated in Chapter~\ref{ch:into}.
+This chapter presents the experimental results. We evaluate three configurations across two Gymnasium environments, with each repeated using five random seeds. The configurations under comparison are:
 
-\noindent The results chapter tells a reader about your findings based on the 
-methodology you have used to solve the investigated problem. For example:
 \begin{itemize}
-    \item If your project aims to implement an algorithm for its analysis, the
-    results may be the performance of the algorithm obtained using a relevant
-    experiment design.
-
-    \item If your project aims to solve some problems/research questions over a
-    collected dataset, the results may be the findings obtained using the applied
-    tools/algorithms/etc.
+    \item \textbf{Condition~A (Model-Free Actor-Critic)}: a baseline actor-critic agent training on real environment interactions.
+    \item \textbf{Condition~B (Imagination AC, standard MSE)}: an imagination-augmented actor-critic using standard MSE losses.
+    \item \textbf{Condition~C (Imagination AC, Symlog MSE)}: an imagination-augmented actor-critic using symlog-transformed losses for the critic and reward prediction.
 \end{itemize}
 
-% ================================================================
-\section{How to Present Your Results}
-\label{sec:how-to-present}
-% ================================================================
+\noindent We present learning curves, critic loss stability, and world model prediction accuracy for each environment. Shaded regions in learning-curve plots denote the standard deviation across the five seeds.
 
-Arrange your results and findings in a logical sequence. Use a bottom-up approach
-by first presenting raw or processed outputs, then progressively building toward
-interpretation. Each result should directly correspond to an objective or research
-question stated in your introduction.
-
-When presenting your results, keep the following principles in mind:
-\begin{itemize}
-    \item \textbf{Be objective:} Report what you observed without over-interpreting.
-    Save deeper analysis for the Discussion chapter.
-
-    \item \textbf{Be precise:} Use exact numerical values, units, and statistical
-    measures (e.g., accuracy, F1-score, RMSE) where applicable.
-
-    \item \textbf{Be complete:} Report both positive and negative findings.
-    Unexpected or poor results are equally important and should not be omitted.
-
-    \item \textbf{Be consistent:} Use the same notation and terminology throughout
-    to ensure clarity.
-\end{itemize}
 
 % ================================================================
-\section{Algorithm Performance Results}
-\label{sec:algorithm-results}
+\section{CartPole-v1 Results}
+\label{sec:cartpole-results}
 % ================================================================
 
-If your project involves the implementation or evaluation of an algorithm, report
-its measured performance directly. Table~\ref{tab:results-metrics} presents the
-quantitative results obtained across the evaluated configurations.
+CartPole-v1 is a simple balancing task with a constant $+1$ reward per time
+step and a maximum episode length of 500. All agents were trained for
+100\,000 environment steps.
+
+% ---------------------------------------------------------------
+\subsection{Learning Curves}
+\label{subsec:cartpole-learning}
+% ---------------------------------------------------------------
+
+Figure~\ref{fig:cartpole-learning} shows the mean episodic return over
+training for each condition. The Model-Free baseline (Condition~A) rises
+steadily and plateaus at approximately 350 return. Condition~B
+(Imagination, standard MSE) displays higher sample efficiency in the early
+phase of training, reaching a mean return of roughly 400 by 60\,000 steps,
+but subsequently plateaus and does not improve further. Condition~C
+(Imagination, Symlog MSE) starts comparatively slower than Condition~B but
+continues to improve beyond the 60\,000-step mark and ultimately achieves
+the highest final return of approximately 430.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/CartPole-v1_learning_curves.png}
+    \caption{CartPole-v1 learning curves: mean episodic return ($\pm 1$
+             standard deviation) over 100\,000 environment steps for each
+             agent condition.}
+    \label{fig:cartpole-learning}
+\end{figure}
+
+% ---------------------------------------------------------------
+\subsection{Critic Loss Stability}
+\label{subsec:cartpole-critic}
+% ---------------------------------------------------------------
+
+Figure~\ref{fig:cartpole-loss} compares the critic loss trajectories of the
+two imagination-augmented conditions. Condition~B (standard MSE) exhibits a
+pronounced loss explosion towards the end of training, with the critic loss
+escalating to approximately $5 \times 10^{11}$. In contrast, Condition~C
+(Symlog MSE) maintains a near-zero critic loss throughout the entire
+training run, with no observable instability.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/CartPole-v1_loss_comparison.png}
+    \caption{CartPole-v1 critic loss comparison between the two
+             imagination-augmented conditions over 100\,000 environment
+             steps. Note the divergent $y$-axis scale caused by the loss
+             explosion in Condition~B.}
+    \label{fig:cartpole-loss}
+\end{figure}
+
+% ---------------------------------------------------------------
+\subsection{World Model Accuracy}
+\label{subsec:cartpole-wm}
+% ---------------------------------------------------------------
+
+Figure~\ref{fig:cartpole-wm} displays the world model prediction errors for
+both dynamics (next-state prediction) and reward prediction. Both
+imagination-augmented conditions learn the CartPole dynamics rapidly, with
+dynamics prediction error falling to near zero early in training. Reward
+prediction error is similarly negligible for both conditions, which is
+expected given that CartPole-v1 issues a constant $+1$ reward at every
+non-terminal step.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/CartPole-v1_world_model_error.png}
+    \caption{CartPole-v1 world model prediction error: dynamics MSE and
+             reward MSE for Conditions~B and~C over 100\,000 environment
+             steps.}
+    \label{fig:cartpole-wm}
+\end{figure}
+
+
+% ================================================================
+\section{LunarLander-v3 Results}
+\label{sec:lunar-results}
+% ================================================================
+
+LunarLander-v3 is a continuous-control landing task with a shaped reward
+signal that spans a wide numerical range (from large negative penalties for
+crashing to positive bonuses for a controlled touchdown). All agents were
+trained for 300\,000 environment steps.
+
+% ---------------------------------------------------------------
+\subsection{Learning Curves}
+\label{subsec:lunar-learning}
+% ---------------------------------------------------------------
+
+Figure~\ref{fig:lunar-learning} shows the mean episodic return for each
+condition. The Model-Free baseline (Condition~A) converges to a stable mean
+return of approximately $-140$. Condition~C (Imagination, Symlog MSE)
+converges to a comparable level of roughly $-140$, tracking the Model-Free
+agent closely. Condition~B (Imagination, standard MSE) exhibits
+catastrophic failure: its mean return collapses to approximately $-1000$
+early in training and never recovers, remaining at that floor for the
+duration of the 300\,000-step budget.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/LunarLander-v3_learning_curves.png}
+    \caption{LunarLander-v3 learning curves: mean episodic return ($\pm 1$
+             standard deviation) over 300\,000 environment steps for each
+             agent condition.}
+    \label{fig:lunar-learning}
+\end{figure}
+
+% ---------------------------------------------------------------
+\subsection{Critic Loss Stability}
+\label{subsec:lunar-critic}
+% ---------------------------------------------------------------
+
+Figure~\ref{fig:lunar-loss} compares the critic loss for the two
+imagination-augmented conditions in LunarLander-v3.
+Condition~B (standard MSE) undergoes a critic
+loss explosion at approximately 100\,000 steps, with the critic loss
+reaching the order of $10^{15}$. Condition~C (Symlog MSE) maintains a
+stable critic loss throughout the full 300\,000 steps,
+with no runaway gradient dynamics.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/LunarLander-v3_loss_comparison.png}
+    \caption{LunarLander-v3 critic loss comparison between the two
+             imagination-augmented conditions over 300\,000 environment
+             steps. Condition~B explodes to $\sim\!10^{15}$; Condition~C
+             remains stable near zero.}
+    \label{fig:lunar-loss}
+\end{figure}
+
+% ---------------------------------------------------------------
+\subsection{World Model Accuracy}
+\label{subsec:lunar-wm}
+% ---------------------------------------------------------------
+
+Figure~\ref{fig:lunar-wm} presents the world model prediction errors for
+LunarLander-v3. The dynamics prediction error is similar for both
+imagination-augmented conditions, indicating that both world models acquire
+a comparable representation of the environment's transition function.
+However, the reward prediction error differs: Condition~B (standard
+MSE) exhibits large, fluctuating reward MSE, varying between
+0 and approximately 450 MSE throughout training. Condition~C (Symlog MSE)
+maintains a near-zero reward prediction error.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/LunarLander-v3_world_model_error.png}
+    \caption{LunarLander-v3 world model prediction error: dynamics MSE and
+             reward MSE for Conditions~B and~C over 300\,000 environment
+             steps.}
+    \label{fig:lunar-wm}
+\end{figure}
+
+
+% ================================================================
+\section{Comparative Summary}
+\label{sec:comparative-summary}
+% ================================================================
+
+Table~\ref{tab:results-summary} summarizes the quantitative and qualitative outcomes across the configurations and environments. For each pair, the table reports the approximate final mean episodic return, critic loss stability, and world model reward prediction error stability. The imagination-augmented agent benefits from symlog-transformed losses in both environments, particularly in LunarLander-v3 where the configuration without symlog collapses.
 
 \begin{table}[ht]
     \centering
-    \caption{Performance results of the proposed algorithm.}
-    \label{tab:results-metrics}
-    \begin{tabular}{lcccc}
-        \hline
-        \textbf{Model / Configuration} & \textbf{Accuracy (\%)} &
-        \textbf{Precision (\%)} & \textbf{Recall (\%)} & \textbf{F1-Score (\%)} \\
-        \hline
-        Baseline                        & --   & --   & --   & --   \\
-        Proposed Algorithm              & --   & --   & --   & --   \\
-        Variant A                       & --   & --   & --   & --   \\
-        Variant B                       & --   & --   & --   & --   \\
-        \hline
+    \caption{Comparative summary of experimental results across conditions
+             and environments.}
+    \label{tab:results-summary}
+    \begin{tabular}{llccc}
+        \toprule
+        \textbf{Environment} & \textbf{Condition} &
+        \textbf{Final Return} & \textbf{Critic Loss} &
+        \textbf{WM Reward Error} \\
+        \midrule
+        \multirow{3}{*}{CartPole-v1}
+            & A: Model-Free       & ${\sim}\,350$ & N/A     & N/A     \\
+            & B: Imagination (MSE) & ${\sim}\,400$ & Exploded (${\sim}\!5\!\times\!10^{11}$)
+                                                              & Near zero \\
+            & C: Imagination (Symlog) & ${\sim}\,430$ & Stable & Near zero \\
+        \midrule
+        \multirow{3}{*}{LunarLander-v3}
+            & A: Model-Free       & ${\sim}\!-140$ & N/A    & N/A     \\
+            & B: Imagination (MSE) & ${\sim}\!-1000$ & Exploded (${\sim}\!10^{15}$)
+                                                               & Unstable (0 to 450) \\
+            & C: Imagination (Symlog) & ${\sim}\!-140$ & Stable & Near zero \\
+        \bottomrule
     \end{tabular}
 \end{table}
 
-Figure~\ref{fig:perf-comparison} provides a visual comparison of the obtained
-results across all evaluated configurations.
-
-\begin{figure}[ht]
-    \centering
-    % \includegraphics[width=0.75\textwidth]{figures/performance_comparison.png}
-    \caption{Comparison of algorithm performance across evaluated configurations.}
-    \label{fig:perf-comparison}
-\end{figure}
 
 % ================================================================
-\section{Data-Driven Findings}
-\label{sec:data-findings}
-% ================================================================
-
-If your project addresses research questions over a collected dataset, present
-the findings obtained from applying your analytical methods. Each finding should
-directly answer a specific research question or objective.
-
-\paragraph{Research Question 1: [State RQ1 here]}
-[Describe the finding that answers RQ1. Reference the relevant table or figure.]
-
-\paragraph{Research Question 2: [State RQ2 here]}
-[Describe the finding that answers RQ2. Reference the relevant table or figure.]
-
-\paragraph{Research Question 3: [State RQ3 here]}
-[Describe the finding that answers RQ3. Reference the relevant table or figure.]
-
-\noindent Use the most appropriate visualisation to support each finding:
-\begin{itemize}
-    \item \textbf{Bar/pie charts} --- categorical distributions or group comparisons.
-    \item \textbf{Line plots} --- trends over time or across parameter values.
-    \item \textbf{Scatter plots} --- relationships between continuous variables.
-    \item \textbf{Heatmaps / confusion matrices} --- classification performance
-    or correlation structure.
-    \item \textbf{Box plots} --- statistical spread and outlier detection.
-\end{itemize}
-
-\begin{figure}[ht]
-    \centering
-    % \includegraphics[width=0.75\textwidth]{figures/findings_plot.png}
-    \caption{[Caption describing the main finding illustrated by this figure.]}
-    \label{fig:findings}
-\end{figure}
-
-% ================================================================
-\section{Ablation Study}
-\label{sec:ablation}
-% ================================================================
-
-% [FIX 2] Removed the loose developer note "What happened when you removed 
-%         each component." which was visible body text in the original file.
-%         Replaced with a proper introductory sentence for the section.
-To assess the contribution of each component of the proposed approach, an ablation
-study was conducted by systematically removing or replacing individual components
-and measuring the impact on overall performance.
-Table~\ref{tab:ablation} reports the results obtained for each ablated variant
-compared to the full model.
-
-\begin{table}[ht]
-    \centering
-    \caption{Ablation study results: performance of each model variant.}
-    \label{tab:ablation}
-    \begin{tabular}{lcccc}
-        \hline
-        \textbf{Model Variant} & \textbf{Accuracy (\%)} & \textbf{Precision (\%)}
-        & \textbf{Recall (\%)} & \textbf{F1-Score (\%)} \\
-        \hline
-        Full Model (Proposed)       & -- & -- & -- & -- \\
-        w/o Component A             & -- & -- & -- & -- \\
-        w/o Component B             & -- & -- & -- & -- \\
-        w/o Component C             & -- & -- & -- & -- \\
-        Baseline (no components)    & -- & -- & -- & -- \\
-        \hline
-    \end{tabular}
-\end{table}
-
-Figure~\ref{fig:ablation} illustrates the performance drop associated with the
-removal of each individual component relative to the full model.
-
-\begin{figure}[ht]
-    \centering
-    % \includegraphics[width=0.75\textwidth]{figures/ablation_study.png}
-    \caption{Performance drop per removed component relative to the full model.}
-    \label{fig:ablation}
-\end{figure}
-
-% ================================================================
-% [FIX 3] Merged old Section 4.5 "Summary of Results" and Section 4.6 
-%         "Summary" into a single unified \section{Summary}.
-%         The summary table is retained here as it belongs in the summary.
 \section{Summary}
 \label{sec:results-summary}
 % ================================================================
 
-% [FIX 3] Original had two separate sections doing the same job.
-%         Now unified: the overview table is followed by a closing paragraph.
-Table~\ref{tab:results-summary} provides a concise overview of the key results
-obtained, mapped to each project objective or research question, including the
-ablation study findings.
-
-\begin{table}[ht]
-    \centering
-    \caption{Summary of results mapped to project objectives.}
-    \label{tab:results-summary}
-    \begin{tabular}{p{4cm} p{5cm} p{4cm}}
-        \hline
-        \textbf{Objective / RQ} & \textbf{Method / Tool Applied} &
-        \textbf{Key Result} \\
-        \hline
-        Objective 1             & [Method used]                  & [Result obtained] \\
-        Objective 2             & [Method used]                  & [Result obtained] \\
-        Objective 3             & [Method used]                  & [Result obtained] \\
-        Ablation Study          & Component removal              & [Key finding]     \\
-        \hline
-    \end{tabular}
-\end{table}
-
-% [FIX 4] Added structured closing sentence with cross-reference to Chapter 5.
-The results presented in this chapter are further interpreted and contextualised
-in Chapter~\ref{ch:evaluation}, where they are discussed in relation to the
-existing literature and the initial research objectives.
+This chapter presented the experimental results. In CartPole-v1, the imagination-augmented agent with symlog (Condition C) achieved the highest return and maintained stable critic losses, while the standard MSE variant (Condition B) showed late-stage critic loss divergence. In LunarLander-v3, Condition B suffered critic loss divergence and policy collapse, whereas Condition C remained stable. Across both environments, dynamics prediction errors were similar, but reward prediction stability was higher in the symlog configuration. These results are discussed in Chapter~\ref{ch:evaluation}.

@@ -1,208 +1,69 @@
-% ================================================================
-% CHANGES MADE TO THIS FILE:
-% [FIX 1] Added a proper introductory paragraph at the top of the chapter.
-%         The original jumped straight into the merge/standalone note with 
-%         no opening sentence that frames what the chapter covers.
-% [FIX 2] Removed the loose developer note "Why it matters and what it 
-%         tells you about your design choices" from the Ablation Study 
-%         subsection. This was visible body text in the compiled PDF.
-%         Replaced with a proper introductory sentence for the subsection.
-% [FIX 3] Improved the Summary section — the original was a good template 
-%         but lacked a \label consistent with other chapters and the 
-%         fill-in italic placeholders were not clearly marked as 
-%         student-editable fields. Added explicit [REPLACE THIS] markers.
-% ================================================================
-
+% !TEX root = ../main.tex
 \chapter{Discussion and Analysis}
 \label{ch:evaluation}
 
-% [FIX 1] Added introductory paragraph — was missing in the original.
-This chapter interprets and analyses the results presented in 
-Chapter~\ref{ch:results}. It explains what the findings mean in the context 
-of the research objectives, situates them within the existing literature, 
-and evaluates their significance. The limitations of the project are also 
-discussed, along with directions for future improvement.
+This chapter discusses the experimental results, compares them to existing literature, and outlines the limitations of the study. The findings demonstrate that target transformations are key to stabilizing training in imagination-based reinforcement learning.
 
-\noindent Depending on the type of project you are doing, this chapter can be 
-merged with the ``Results'' chapter as ``Results and Discussion'' as suggested 
-by your supervisor. In the case of software development and standalone 
-applications, describe the significance of the obtained results and the overall 
-performance of the system.
-
-% ================================================================
+%--------------------------------------------------------------
 \section{Interpretation of Results}
-\label{sec:interpretation}
-% ================================================================
+%--------------------------------------------------------------
 
-The Discussion and Analysis chapter evaluates and interprets the results 
-presented in Chapter~\ref{ch:results}. Unlike the Results chapter, which reports
-findings objectively, this chapter explains \textit{what the results mean}, 
-\textit{why they occurred}, and \textit{how they relate to the research 
-objectives and existing literature}.
+\subsection{Effect of Imagination-Based Training}
 
-When interpreting your results, consider the following:
-\begin{itemize}
-    \item \textbf{Relate back to objectives:} For each result, explicitly state
-    whether it supports, partially supports, or contradicts the corresponding
-    research objective or hypothesis.
+The comparison between Condition~A (model-free actor-critic) and Condition~B (imagination-based actor-critic with MSE losses) illustrates the trade-offs of learning from simulated experience. In CartPole-v1, Condition~B showed higher sample efficiency in early training than Condition~A, reaching near-optimal returns in fewer environment interactions (see \cref{fig:cartpole-learning}). This outcome is consistent with model-based reinforcement learning theory: generating simulated rollouts from a trained world model allows the agent to reuse transitions, reducing the sample complexity of learning.
 
-    \item \textbf{Compare with the literature:} Situate your findings within the
-    broader body of knowledge. Do your results agree with or diverge from prior
-    work? If they diverge, propose a reasoned explanation.
+However, model-based training introduces prediction error from the world model into the optimization process. When training on simulated trajectories, errors in the world model are propagated to the actor and critic updates. In CartPole-v1, which features a constant $+1$ reward and smooth state transitions, these compounding errors remain small. As shown in \cref{fig:cartpole-loss}, the critic loss for Condition~B remained bounded.
 
-    \item \textbf{Explain unexpected outcomes:} If any result was surprising or
-    inconsistent with expectations, discuss possible causes such as data quality,
-    model assumptions, or experimental constraints.
+In contrast, in LunarLander-v3, Condition~B failed to learn and experienced policy collapse, with mean returns dropping to approximately $-1000$ (\cref{fig:lunar-learning}). This indicates that imagination-based training without proper target scaling can destabilize policy learning.
 
-    \item \textbf{Avoid repetition:} Do not simply restate the numbers from the
-    Results chapter. Instead, provide analytical commentary that adds new insight.
-\end{itemize}
+\subsection{The Value Explosion Problem}
 
-\subsection{Interpretation for Algorithm-Based Projects}
-\label{subsec:algo-interpretation}
+The failure of Condition~B in LunarLander-v3 is associated with value function divergence. As shown in \cref{fig:lunar-loss}, the critic loss for Condition~B escalated to approximately $10^{15}$, which corrupted the value estimates and the policy gradient signal.
 
-If your project involves algorithm implementation or evaluation, interpret the
-measured performance in context. For example:
-\begin{itemize}
-    \item Does the achieved accuracy meet the threshold required for the
-    application domain?
-    \item How does the proposed algorithm compare to the baseline in terms of
-    performance, complexity, and scalability?
-    \item Are the gains in accuracy justified given any trade-offs in computational
-    cost or memory usage?
-    \item Do the results generalise across different configurations or datasets,
-    or are they specific to the experimental conditions?
-\end{itemize}
+This divergence is driven by the compounding of prediction errors across imagined rollouts. During imagination, the agent generates trajectories of horizon $H$ by autoregressively applying the world model. At step $t$, the predicted next state contains prediction errors. Because subsequent steps are conditioned on previous predictions, these errors accumulate. Over an $H$-step horizon, the cumulative prediction error grows.
 
-\subsection{Interpretation for Data-Driven Projects}
-\label{subsec:data-interpretation}
+In LunarLander-v3, this accumulation is amplified by the reward structure, which includes terminal rewards of $-100$ and $+100$ along with continuous shaping rewards. When the critic fits these variable target values using standard MSE loss, prediction errors result in large squared residuals. For example, a difference of $200$ between the target and predicted values yields a squared error of $40{,}000$ before temporal compounding is factored in.
 
-If your project addresses research questions over a collected dataset, interpret
-each finding in relation to its corresponding research question:
-\begin{itemize}
-    \item Does the finding provide a clear and direct answer to the research
-    question, or is the evidence only partial?
-    \item Are there patterns, correlations, or trends that were not anticipated
-    in the problem formulation?
-    \item How do the findings contribute to the understanding of the investigated
-    problem beyond what was already known from the literature?
-\end{itemize}
+The resulting large losses produce large gradients, which push the critic's parameters to produce extreme predictions. This feedback loop (where prediction errors yield large gradients that increase subsequent prediction errors) leads to divergence. This instability motivated the development of symlog losses in DreamerV3~\citep{hafner2023dreamerv3}.
 
-\subsection{Analysis of Ablation Study}
-\label{subsec:ablation-analysis}
+\subsection{Symlog as a Stabilizer}
 
-% [FIX 2] Removed loose developer note "Why it matters and what it tells you 
-%         about your design choices" — it was visible body text in original.
-%         Replaced with a proper introductory sentence.
-The ablation study results presented in Table~\ref{tab:ablation} provide insight 
-into the individual contribution of each component to the overall performance 
-of the proposed approach. The interpretation below explains what each component's 
-removal reveals about the design choices made.
+Condition~C demonstrates that symlog-transformed losses prevent value divergence. In LunarLander-v3, the critic loss under Condition~C remained stable throughout training (\cref{fig:lunar-loss}), while the mean returns stabilized at approximately $-140$, matching the model-free baseline (\cref{fig:lunar-learning}).
 
-\begin{itemize}
-    \item \textbf{Component A:} Removing Component A resulted in the largest
-    performance drop, suggesting it plays the most critical role in [describe
-    its function, e.g., feature extraction, regularisation, etc.]. This aligns
-    with [cite relevant work] which similarly reported that [related finding].
+The symlog function, defined as:
+\begin{equation}
+    \operatorname{symlog}(x) = \operatorname{sign}(x) \ln(|x| + 1)
+\end{equation}
+compresses values logarithmically while preserving their sign. A target of $-100$ maps to $\operatorname{symlog}(-100) \approx -4.62$, and $+100$ maps to $\approx +4.62$. The dynamic range is thus compressed.
 
-    \item \textbf{Component B:} The removal of Component B led to a moderate
-    decline in performance, indicating that while it contributes meaningfully,
-    the model retains partial capability without it. This suggests [interpretation].
+This compression bounds the squared residuals. The maximum squared error in symlog space is restricted to approximately $(4.62 - (-4.62))^2 \approx 85.4$, compared to values up to $40{,}000$ in the original space. Bounding the loss values constrains the gradient magnitudes, preventing the feedback loop that drives divergence.
 
-    \item \textbf{Component C:} Component C showed the smallest individual
-    impact on performance. However, its combined absence with other components
-    may indicate an interdependency that warrants further investigation.
-\end{itemize}
+Additionally, the world model's reward predictor benefits from the symlog transformation. As shown in \cref{fig:lunar-wm}, the reward prediction error under Condition~C is lower than that of Condition~B. Predicting in the compressed symlog space simplifies regression because the target values are bounded.
 
-\noindent Overall, the ablation study confirms that all components contribute
-positively to the proposed approach, and that the full model configuration
-achieves the best trade-off between [metric 1] and [metric 2].
+%--------------------------------------------------------------
+\section{Comparison with Existing Literature}
+%--------------------------------------------------------------
 
-% ================================================================
-\section{Significance of the Findings}
-\label{sec:significance}
-% ================================================================
+These results support the findings of \citet{hafner2023dreamerv3} regarding the role of symlog transformations in stabilizing world-model-based learning. While DreamerV3 combines symlog predictions with several other components (two-hot encoding, KL balancing, and the RSSM), our study isolates the effect of symlog. By using raw state-space observations, a feedforward MLP world model, and standard actor-critic updates, we verify that the symlog transformation alone prevents value divergence.
 
-In this section, discuss the significance of your results and key findings in
-order to enhance the reader's understanding of the investigated problem.
-Significance can be assessed at multiple levels:
+Our hybrid Dyna-style training approach, which uses both real and simulated transitions, connects to classic planning architectures. Interleaving model-free updates on real data with planning on simulated data stabilizes learning when the world model is still inaccurate early in training. Real transitions provide a baseline that helps preserve policy quality.
 
-\begin{itemize}
-    \item \textbf{Technical significance:} Does the work introduce a novel method,
-    improve an existing approach, or demonstrate a result that advances the
-    technical state of the art? For example, a meaningful improvement in
-    classification accuracy or a reduction in computational complexity may
-    constitute technical significance.
-
-    \item \textbf{Practical significance:} Can the findings be applied in a
-    real-world context? Discuss whether the results are actionable, deployable,
-    or useful for practitioners in the relevant domain.
-
-    \item \textbf{Scientific significance:} Do the findings confirm, challenge,
-    or extend existing theories or models in the field? Even negative results
-    can be scientifically significant if they rule out an assumed relationship
-    or expose a limitation in a widely used method.
-\end{itemize}
-
-\noindent Where applicable, explicitly state how the findings address the gap in
-the literature identified in Chapter~\ref{ch:lit_rev}, and what new knowledge
-this project contributes.
-
-% ================================================================
+%--------------------------------------------------------------
 \section{Limitations}
-\label{sec:limitations}
-% ================================================================
+%--------------------------------------------------------------
 
-Every project operates under constraints that may affect the validity,
-generalisability, or completeness of its findings. Acknowledging limitations
-transparently demonstrates critical thinking and scientific maturity. Discuss
-the key limitations of your project under the following aspects:
+Several limitations of this study should be noted:
 
 \begin{itemize}
-    \item \textbf{Data limitations:} Were there constraints on the size,
-    diversity, or quality of the dataset? For instance, a small or imbalanced
-    dataset may limit the generalisability of the results to broader populations
-    or real-world conditions.
-
-    \item \textbf{Methodological limitations:} Are there assumptions underlying
-    your chosen methods that may not hold in all cases? For example, certain
-    algorithms assume linearity, stationarity, or independence of features.
-
-    \item \textbf{Scope limitations:} Were certain aspects of the problem left
-    unexplored due to time, resource, or access constraints? Be explicit about
-    what is outside the scope of this work and why.
-
-    \item \textbf{Evaluation limitations:} Are the chosen evaluation metrics
-    fully representative of real-world performance? For instance, accuracy alone
-    may be misleading in the presence of class imbalance.
-
-    \item \textbf{Reproducibility:} Are there factors in your experimental setup
-    (e.g., randomness, proprietary tools, hardware dependency) that may affect
-    the reproducibility of the results?
+    \item \textbf{Simplified world model architecture:} The feedforward MLP world model operating in the raw observation space is simpler than recurrent latent-space models like the RSSM in DreamerV3. This simplification isolates the effect of symlog but limits the capacity to capture long-term dependencies.
+    \item \textbf{Discrete action spaces:} We evaluated the configurations on environments with discrete action spaces. The interaction between symlog transformations and continuous action spaces remains to be evaluated.
+    \item \textbf{Limited environment diversity:} The study is restricted to CartPole-v1 and LunarLander-v3. Evaluating a wider range of environments with diverse reward scales would strengthen the findings.
+    \item \textbf{Omission of two-hot encoding:} We did not evaluate two-hot categorical encoding, which DreamerV3 combines with symlog.
+    \item \textbf{Incomplete task performance:} While Condition~C prevented value explosion in LunarLander-v3, the final returns remained around $-140$, falling short of the solved threshold of $+200$. This indicates that while symlog stabilizes training, additional architectural or algorithmic components are needed for high performance.
 \end{itemize}
 
-\noindent Where relevant, suggest potential improvements or directions that could
-address these limitations in future work. This naturally transitions into the
-recommendations discussed in Chapter~\ref{ch:con}.
-
-% ================================================================
-% [FIX 3] Summary: added \label consistent with other chapters and 
-%         made fill-in placeholders clearly marked for students.
+%--------------------------------------------------------------
 \section{Summary}
-\label{sec:discussion-summary}
-% ================================================================
+%--------------------------------------------------------------
 
-This chapter provided an analytical interpretation of the results presented in
-Chapter~\ref{ch:results}. The key findings were examined in relation to the
-project objectives, situated within the existing literature, and assessed for
-their technical, practical, and scientific significance. The ablation study was
-analysed to evaluate the contribution of individual components to the overall
-system performance. The main limitations of the project were also identified and
-discussed, along with potential directions for improvement.
-
-% [FIX 3] Made the fill-in sentence more explicit for students.
-Overall, the results \textit{[REPLACE: support / partially support / challenge]}
-the initial research objectives by demonstrating that \textit{[REPLACE: insert 
-a one or two sentence summary of the core finding here]}. 
-The following chapter presents the conclusions drawn from this work and outlines 
-recommendations for future research.
+This chapter analyzed the experimental results, focusing on error compounding and the stabilizing properties of the symlog transformation. The symlog function prevents value divergence by bounding the dynamic range of the regression targets. Our results isolate the contribution of symlog in a simplified setting. The limitations identified here suggest directions for future work, which are discussed in Chapter~\ref{ch:con}.
