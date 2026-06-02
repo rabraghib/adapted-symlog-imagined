@@ -6,12 +6,12 @@ This chapter offers a reflection on the project. We discuss the knowledge and sk
 
 \bigskip
 
-\noindent\textbf{Knowledge and Skills Developed.}
+\noindent\textbf{Developed knowledge and skills.}
 This project required us to work with reinforcement learning concepts in detail. We implemented actor-critic agents, world models, and imagination-based training loops in PyTorch, which required understanding each component at the level of tensor operations rather than relying on high-level libraries. Through this process, we gained experience with policy gradient methods, value function estimation, and the integration of model-free and model-based learning.
 
-We also gained practical experience with numerical stability in deep learning. Concepts such as NaN propagation, gradient explosion, and the sensitivity of neural networks to target magnitudes were previously theoretical. Debugging the failures of Condition~B, where critic losses diverged to $10^{15}$ and gradients became undefined, provided experience with these issues. This taught us to consider the numerical properties of loss functions alongside their theoretical formulations.
+We also gained practical experience with numerical stability in deep learning. Concepts such as NaN propagation, gradient explosion, and the sensitivity of neural networks to target magnitudes were previously theoretical. Debugging the failures of Condition~B, where critic losses diverged to $10^{15}$, and gradients became undefined, provided experience with these issues. This taught us to consider the numerical properties of loss functions alongside their theoretical formulations.
 
-In addition, we developed our skills in experimental design and scientific methodology. Designing a controlled comparison across three configurations, managing random seeds for reproducibility, and interpreting results conservatively are competencies that apply to research generally.
+In addition, we developed our skills in experimental design and scientific methodology. Designing a controlled comparison across three configurations, managing random seeds for reproducibility, and interpreting results conservatively are competencies that apply to research in general.
 
 \bigskip
 
@@ -20,7 +20,7 @@ Several decisions shaped the trajectory of the project. The most significant was
 
 The decision to interleave real and imagined experience by training on both actual transitions and world model rollouts resolved this issue. This approach reduced the sample efficiency advantages of pure imagination training but produced stable learning dynamics. This experience indicated that the accuracy of the world model limits the utility of imagination-based training.
 
-Another problem-solving task arose from debugging NaN values during training. We traced the issue to the \texttt{symexp} function (the inverse of symlog), where large inputs to the exponential function produced floating-point overflow. To resolve this, we clamped the input to \texttt{symexp} to a safe range and applied gradient clipping to the optimizers. These are common practices in deep reinforcement learning, but verifying their utility through implementation was instructive.
+Another problem-solving task arises from debugging NaN values during training. We traced the issue to the \texttt{symexp} function (the inverse of symlog), where large inputs to the exponential function produced floating-point overflow. To resolve this, we clamped the input to \texttt{symexp} to a safe range and applied gradient clipping to the optimizers. These are common practices in deep reinforcement learning, but verifying their utility through implementation was instructive.
 
 Finally, the decision to work in the raw state space rather than implementing pixel-based observations and a full RSSM was a choice to manage scope. We decided that a clear, interpretable comparison would be more valuable than a partial implementation of the full DreamerV3 architecture. The clarity of the results supports this decision.
 
@@ -29,27 +29,27 @@ Finally, the decision to work in the raw state space rather than implementing pi
 \noindent\textbf{Challenges Encountered.}
 The primary challenge was achieving stable training for the imagination-based agent. Instability in imagination-based RL can be sudden. A training run can collapse within a few episodes if the value function diverges. This made debugging difficult, as the visible failure (such as a NaN in the policy logits) was often separated from the root cause (such as a compounding error in the world model's reward predictions several hundred updates earlier).
 
-Managing the computational demands of the experiment was also a challenge. Running three configurations across two environments with multiple random seeds required managing parallel processes. We encountered CPU thrashing when launching too many runs simultaneously, which we addressed by implementing a sequential execution strategy.
+Managing the computational demands of the experiment was also a challenge. Running three configurations in two environments with multiple random seeds required managing parallel processes. We encountered CPU thrashing when launching too many runs simultaneously, which we addressed by implementing a sequential execution strategy.
 
-Balancing scope with feasibility was a constant consideration. We initially planned to implement the full DreamerV3 architecture, including the RSSM, two-hot encoding, and KL-balanced world model training. However, we recognized that each additional component would introduce confounding factors, making it harder to isolate the role of symlog. Simplifying the setup clarified the findings.
+Balancing scope with feasibility was a constant consideration. We initially planned to implement the full DreamerV3 architecture, including RSSM, two-hot encoding, and KL-balanced world model training. However, we recognize that each additional component would introduce confounding factors, making it harder to isolate the role of symlog. Simplifying the setup clarified the findings.
 
 \bigskip
 
 \noindent\textbf{What We Would Do Differently.}
-With hindsight, several aspects of our approach could have been improved. We would have started with CartPole-v1 exclusively and only moved to LunarLander-v3 after establishing stable training in the simpler environment. Instead, we attempted to develop both environments in parallel, which complicated debugging when bugs manifested differently across the two settings.
+In hindsight, several aspects of our approach could have been improved. We would have started with CartPole-v1 exclusively and only moved to LunarLander-v3 after establishing stable training in the simpler environment. Instead, we attempted to develop both environments in parallel, which complicated debugging when bugs manifested differently across the two settings.
 
-We would also have implemented unit tests for the symlog and symexp functions earlier in the development process. Debugging time could have been reduced if we had verified the numerical properties of these functions (such as verifying that $\operatorname{symexp}(\operatorname{symlog}(x)) = x$ and that gradients remain finite) before integrating them into the training loop.
+We would also have implemented unit tests for the symlog and symexp functions earlier in the development process. Debugging time could have been reduced if we had verified the numerical properties of these functions (such as verifying that $\operatorname{symexp}(\operatorname{symlog}(x)) = x$ and that the gradients remain finite) before integrating them into the training loop.
 
 Finally, we would have allocated more time for hyperparameter tuning, particularly for the imagination horizon length and the ratio of real-to-imagined updates. These parameters affect training stability and sample efficiency, and our choices were based on values reported in the literature rather than systematic optimization for our specific architecture.
 
 \bigskip
 
 \noindent\textbf{Impact on Future Development.}
-This project has deepened our understanding of the relationship between numerical stability and algorithmic design in deep reinforcement learning. We learned that the choice of loss parameterization can determine whether an algorithm succeeds, independent of its theoretical soundness.
+This project has deepened our understanding of the relationship between numerical stability and algorithmic design in deep reinforcement learning. We learned that the choice of loss parameterization can determine whether an algorithm succeeds, regardless of its theoretical soundness.
 
 The experience of building a research codebase from scratch, including modular agent components, experiment configuration, and results logging, has increased our confidence in contributing to future research. We now have a template for conducting controlled experiments in RL.
 
-More broader, the project has developed our interest in world model research. The idea that agents can plan within a learned world model is a promising direction that we look forward to exploring in future academic and professional work.
+More broadly, the project has developed our interest in world model research. The idea that agents can plan within a learned world model is a promising direction that we look forward to exploring in future academic and professional work.
 
 %--------------------------------------------------------------
 \section{Summary}
