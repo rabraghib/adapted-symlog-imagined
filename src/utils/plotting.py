@@ -80,6 +80,10 @@ def plot_learning_curves(
     ax.grid(True, alpha=0.3)
     fig.tight_layout()
     fig.savefig(save_path, dpi=300, bbox_inches="tight")
+    # Also save as PDF for high-quality LaTeX inclusion
+    if save_path.endswith(".png"):
+        pdf_path = save_path[:-4] + ".pdf"
+        fig.savefig(pdf_path, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -110,6 +114,10 @@ def plot_loss_comparison(
     ax.grid(True, alpha=0.3)
     fig.tight_layout()
     fig.savefig(save_path, dpi=300, bbox_inches="tight")
+    # Also save as PDF for high-quality LaTeX inclusion
+    if save_path.endswith(".png"):
+        pdf_path = save_path[:-4] + ".pdf"
+        fig.savefig(pdf_path, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -161,4 +169,8 @@ def plot_world_model_error(
     )
     fig.tight_layout()
     fig.savefig(save_path, dpi=300, bbox_inches="tight")
+    # Also save as PDF for high-quality LaTeX inclusion
+    if save_path.endswith(".png"):
+        pdf_path = save_path[:-4] + ".pdf"
+        fig.savefig(pdf_path, bbox_inches="tight")
     plt.close(fig)
