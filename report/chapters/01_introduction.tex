@@ -36,7 +36,7 @@ Standard mean squared error (MSE) losses are sensitive to the scale of target va
 
 This sensitivity to reward scale is a challenge for imagination-based agents. During autoregressive rollouts, prediction errors in rewards or state transitions accumulate over time steps. If these errors inflate the predicted rewards or value targets, the MSE loss amplifies the gradients, pushing value predictions further. This feedback loop can cause a value explosion, where the critic loss diverges (exceeding $10^{15}$ in our experiments), corrupting gradient signals and causing policy collapse.
 
-The severity of this issue depends on the environment. In environments with small, bounded rewards (such as CartPole-v1, where each step yields a reward of $+1$), prediction errors are constrained, and standard MSE losses may suffice. In environments with larger, variable rewards (such as LunarLander-v3, where rewards span from approximately $-100$ to $+200$), the MSE amplification is pronounced, and training instability can emerge.
+The severity of this issue depends on the environment. In environments with small, bounded rewards (such as CartPole-v1, where each step yields a reward of $+1$), prediction errors are constrained, and standard MSE losses may suffice. In environments with larger, variable rewards (such as LunarLander-v3, where rewards span from approximately $-100$ to $+200$), the MSE amplification is pronounced, and training instability can emerge. Both environments are provided by the Gymnasium library~\citep{towers2024gymnasium}.
 
 This project investigates whether the symlog transformation, originally proposed as part of the DreamerV3 architecture, can be applied in isolation to address value explosion in a simplified imagination-based agent.
 
